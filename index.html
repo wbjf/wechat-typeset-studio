@@ -252,6 +252,92 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
   backdrop-filter:blur(2px);
 }
 .dropmask.show{display:flex;}
+/* ===================== 我的主题 / 元件 / 图片 / 表格 ===================== */
+/* 主题浮层里的分组标题行：左侧文字 + 中间细线 + 右侧小按钮 */
+.tp-group{grid-column:1 / -1;display:flex;align-items:center;gap:7px;margin-top:3px;font-size:11.5px;color:var(--text3);}
+.tp-group i{flex:1;height:1px;background:var(--line);}
+.tp-group button{
+  padding:2px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel2);
+  font-size:11px;color:var(--text2);transition:.14s;
+}
+.tp-group button:hover{background:var(--line2);color:var(--text);}
+.tp-group button:disabled{opacity:.45;cursor:default;}
+.tp-item{position:relative;}
+.tp-del{
+  position:absolute;top:-6px;right:-6px;width:17px;height:17px;border-radius:50%;
+  background:var(--panel);border:1px solid var(--line);color:var(--text3);
+  font-size:12px;line-height:14px;text-align:center;display:none;
+}
+.tp-item:hover .tp-del{display:block;}
+.tp-del:hover{color:#e5484d;border-color:#f5c2c3;background:#fdf0f0;}
+
+/* 通用浮层（元件 / 图片 / 表格共用外壳） */
+.pop{
+  position:fixed;z-index:68;padding:12px;border-radius:12px;
+  background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 8px 14px rgba(16,24,40,.10), 0 20px 44px rgba(16,24,40,.20);
+}
+html[data-app="dark"] .pop{box-shadow:0 8px 14px rgba(0,0,0,.5), 0 20px 44px rgba(0,0,0,.6);}
+.pop[hidden]{display:none;}
+.pop-h{display:flex;align-items:center;gap:6px;margin:0 0 9px;font-size:12.5px;font-weight:600;color:var(--text);}
+.pop-h small{font-weight:400;font-size:11px;color:var(--text3);}
+.pop-row{display:flex;align-items:center;gap:8px;margin:0 0 8px;}
+.pop-row>label{flex:0 0 44px;font-size:11.5px;color:var(--text3);}
+.pop-row select,.pop-row input[type=text]{
+  flex:1;min-width:0;height:26px;padding:0 7px;border-radius:7px;
+  border:1px solid var(--line);background:var(--panel2);font-size:12px;outline:none;
+}
+.pop-row input[type=text]:focus{border-color:var(--brand);}
+.pop-row input[type=range]{flex:1;min-width:0;accent-color:var(--brand);height:3px;}
+.pop-row .pv{flex:0 0 32px;text-align:right;font-size:11px;color:var(--text2);font-variant-numeric:tabular-nums;}
+.pop-foot{display:flex;gap:7px;justify-content:flex-end;margin-top:11px;}
+.pop-foot .btn{padding:6px 11px;font-size:12.5px;}
+.pop-hint{margin:9px 0 0;font-size:11px;color:var(--text3);line-height:1.7;}
+
+/* 元件选择器 */
+.el-list{display:grid;grid-template-columns:1fr 1fr;gap:7px;width:308px;}
+.el-item{
+  display:flex;flex-direction:column;gap:3px;padding:9px 10px;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel2);
+  text-align:left;transition:.14s;
+}
+.el-item:hover{border-color:var(--brand);background:var(--brand-soft);}
+.el-item b{font-size:12.5px;font-weight:600;color:var(--text);}
+.el-item i{font-style:normal;font-size:11px;color:var(--text3);}
+
+/* 表格可视化编辑 */
+.pop-h .tlen{margin-left:auto;font-size:11px;font-weight:400;color:var(--text3);}
+.tblwrap{max-width:452px;max-height:216px;overflow:auto;border:1px solid var(--line);border-radius:9px;}
+table.tbled{border-collapse:collapse;}
+table.tbled td{border:1px solid var(--line);padding:0;background:var(--panel);}
+table.tbled tr.head td{background:var(--panel2);}
+table.tbled td input{
+  display:block;width:104px;padding:6px 8px;border:none;background:none;outline:none;
+  font-size:12px;color:var(--text);
+}
+table.tbled tr.head td input{font-weight:600;}
+table.tbled td input:focus{box-shadow:inset 0 0 0 2px var(--brand);border-radius:0;}
+.tblbar{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px;}
+.tblbar button{
+  padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);
+  font-size:11.5px;color:var(--text2);transition:.14s;
+}
+.tblbar button:hover{background:var(--line2);color:var(--text);}
+.tblbar button.on{border-color:var(--brand);background:var(--brand-soft);color:var(--text);font-weight:600;}
+
+/* 居中模态（输入名称等） */
+.modal{position:fixed;inset:0;z-index:92;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(16,24,40,.36);}
+.modal[hidden]{display:none;}
+.modal .mbox{width:340px;max-width:100%;padding:17px;border-radius:12px;background:var(--panel);box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.modal h4{margin:0 0 5px;font-size:13.5px;font-weight:600;color:var(--text);}
+.modal p{margin:0 0 11px;font-size:12px;line-height:1.75;color:var(--text3);}
+.modal input{
+  width:100%;padding:8px 10px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel2);font-size:13px;outline:none;
+}
+.modal input:focus{border-color:var(--brand);}
+.modal .mfoot{display:flex;justify-content:flex-end;gap:8px;margin-top:13px;}
+
 @media (max-width:900px){
   .workspace{flex-direction:column;overflow:auto;}
   .pane-src{width:auto!important;height:260px;flex:0 0 auto;}
@@ -354,7 +440,7 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
         <button class="tb" data-act="insertUnorderedList" title="无序列表">• 列表</button>
         <button class="tb" data-act="insertOrderedList" title="有序列表">1. 列表</button>
         <button class="tb wide" data-act="hr" title="插入分割线">分割线</button>
-        <button class="tb wide" data-act="image" title="插入图片">图片</button>
+        <button class="tb wide" id="btnInsert" title="插入图片 / 表格 / 装饰元件">插入 ▾</button>
         <button class="tb wide" data-act="clear" title="清除格式">清除</button>
         <span class="tsep"></span>
         <button class="tb wide" id="btnStylePanel" title="展开/收起全局样式">样式设置 ▾</button>
@@ -390,9 +476,10 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
         <div class="fld"><label>瘦身</label>
           <span class="switch"><input type="checkbox" id="gSlim" checked title="删掉与祖先同值的可继承声明，靠继承生效。约省三成字符，样式不变。若个别地方样式丢失可关掉。"> 样式瘦身（靠继承省字符）</span>
         </div>
-        <div class="fld"><label>操作</label>
+        <div class="fld" style="grid-column:span 2"><label>操作</label>
           <button class="mini" id="btnResetStyle">恢复主题默认</button>
           <button class="mini" id="btnRetouch">重新排版</button>
+          <button class="mini" id="btnSaveTheme">存为我的主题</button>
         </div>
       </div>
     </div>
@@ -415,6 +502,18 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
 
 <div class="toast" id="toast"></div>
 <div class="dropmask" id="dropmask">松开即可导入文稿</div>
+
+<div class="modal" id="askModal" hidden>
+  <div class="mbox">
+    <h4 id="askTitle">标题</h4>
+    <p id="askDesc"></p>
+    <input type="text" id="askInput" spellcheck="false" autocomplete="off">
+    <div class="mfoot">
+      <button class="btn ghost" id="askCancel">取消</button>
+      <button class="btn primary" id="askOk">确定</button>
+    </div>
+  </div>
+</div>
 
 <script>
 "use strict";
@@ -487,8 +586,10 @@ function buildTheme(c){
   const lh     = c.lh   || 1.85;
   const ls     = (c.ls!=null ? c.ls : 0.5) + 'px';
   const gap    = (c.gap!=null ? c.gap : 18);
-  const font   = FONT[c.font || 'sans'];
-  const hfont  = FONT[c.headFont || c.font || 'sans'];
+  /* fontCustom / headFontCustom 是「存为我的主题」写进来的完整字体栈
+     （面板里的「苹方」不是 FONT 里的任何一个 key，只能原样存） */
+  const font   = c.fontCustom || FONT[c.font || 'sans'];
+  const hfont  = c.headFontCustom || FONT[c.headFont || c.font || 'sans'];
   const radius = (c.radius!=null ? c.radius : 6);
   const S = {};
 
@@ -569,7 +670,8 @@ function buildTheme(c){
   /* 正文 */
   S.p = {
     'font-size': base+'px','line-height':lh, color:c.fg, 'letter-spacing':ls,
-    'font-family': font, margin:'0 0 '+gap+'px','text-align':'justify'
+    'font-family': font, margin:'0 0 '+gap+'px','text-align':'justify',
+    'text-indent': c.indent ? '2em' : null
   };
 
   /* 行内 */
@@ -721,9 +823,98 @@ const THEME_LIST = [
       titleAlign:'center', strongColor:'#E8B464' } }
 ];
 
+/* ----------------------------------------------------------
+   使用者自己存下来的主题：结构跟 THEME_LIST 完全一致，
+   额外带 custom:true 以便在浮层里分组与删除。
+   存在 localStorage，可导出成 JSON 分享给别人。
+   ---------------------------------------------------------- */
+const CUSTOM_KEY = 'wxt-custom-themes';
+let customThemes = [];
+
+function loadCustomThemes(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
+    customThemes = Array.isArray(raw) ? raw.filter(t => t && t.id && t.cfg) : [];
+  }catch(e){ customThemes = []; }
+}
+function saveCustomThemes(){
+  try{ localStorage.setItem(CUSTOM_KEY, JSON.stringify(customThemes)); }catch(e){}
+}
+/* 内置 + 自定义。凡是按 id 取主题的地方都走这里。 */
+function allThemes(){
+  return THEME_LIST.concat(customThemes);
+}
+function themeSwatch(t){
+  if(t.swatch && t.swatch.length) return t.swatch;
+  const c = t.cfg || {};
+  return [c.accent || '#888888', c.bg || '#FFFFFF', c.heading || c.accent || '#333333'];
+}
+
 /* ==========================================================
    2. 文稿解析
    ========================================================== */
+
+/* ----------------------------------------------------------
+   装饰元件。写法是一行 `::元件名 字段一 | 字段二 | …`，
+   也就是左侧文档里的一行正文 —— 因此它跟文稿一起被保存、
+   换主题不丢、导出分享时也带着走。
+
+   每个 build(cfg, args) 都必须只产出 section / p / span，
+   颜色取自当前主题，所以任何主题下都不会突兀。
+   ---------------------------------------------------------- */
+const ELEM_MAP = {};
+function defElem(id, name, desc, fields, build){
+  ELEM_MAP[id] = { id, name, desc, fields, build };
+}
+
+defElem('follow', '关注引导卡', '文末引导关注', ['主标题','副标题'], (c, a)=>
+  '<section '+st({ margin:'30px 0', padding:'20px 18px', 'background-color':c.tint,
+      border:'1px solid '+c.line, 'border-radius':(c.radius!=null?c.radius:6)+'px', 'text-align':'center' })+'>'+
+    '<p '+st({ 'font-size':'15px','line-height':'1.7','font-weight':'700', color:c.heading,
+        'letter-spacing':'0.6px', margin:'0 0 7px' })+'>'+esc(a[0] || '点击上方蓝字关注我')+'</p>'+
+    '<p '+st({ 'font-size':'12.5px','line-height':'1.8', color:c.muted, margin:'0' })+'>'+
+      esc(a[1] || '每周更新，陪你把日子过得明白一点')+'</p>'+
+  '</section>');
+
+defElem('card', '作者名片', '署名加一句话简介', ['姓名','简介'], (c, a)=>
+  '<section '+st({ margin:'30px 0', padding:'16px 18px', 'background-color':c.tint,
+      'border-left':'3px solid '+c.accent,
+      'border-radius':'0 '+(c.radius!=null?c.radius:6)+'px '+(c.radius!=null?c.radius:6)+'px 0' })+'>'+
+    '<p '+st({ 'font-size':'14px','line-height':'1.7','font-weight':'700', color:c.heading, margin:'0 0 5px' })+'>'+
+      esc(a[0] || '作者 / 你的名字')+'</p>'+
+    '<p '+st({ 'font-size':'12.5px','line-height':'1.85', color:c.fgSoft||c.fg, margin:'0' })+'>'+
+      esc(a[1] || '一句话介绍自己，比如：在菜市场研究了十年，只说好懂的挑法。')+'</p>'+
+  '</section>');
+
+defElem('past', '往期回顾', '小节标题加多条链接', ['小节标题','条目一','条目二','条目三'], (c, a)=>{
+  const items = a.slice(1).filter(Boolean);
+  const list = (items.length ? items : ['上一篇的标题','再上一篇的标题','更早的一篇']).map(t=>
+    '<p '+st({ 'font-size':'13px','line-height':'2', color:c.fgSoft||c.fg, margin:'0 0 3px' })+'>'+
+      '<span '+st({ color:c.accent, 'margin-right':'8px' })+'>'+esc(c.mark || '◆')+'</span>'+esc(t)+'</p>'
+  ).join('');
+  return '<section '+st({ margin:'32px 0','padding-top':'16px','border-top':'1px solid '+c.line })+'>'+
+    '<p '+st({ 'font-family':FONT[c.headFont||c.font||'sans'], 'font-size':'13.5px','font-weight':'700',
+        color:c.accentDeep||c.accent, 'letter-spacing':'2px', margin:'0 0 10px' })+'>'+
+      esc(a[0] || '往期回顾')+'</p>'+ list +
+  '</section>';
+});
+
+defElem('quote', '金句卡', '居中的一句大字', ['句子'], (c, a)=>
+  '<section '+st({ margin:'32px 0', padding:'24px 22px', 'background-color':c.tint,
+      'border-radius':(c.radius!=null?c.radius:6)+'px', 'text-align':'center' })+'>'+
+    '<p '+st({ 'font-family':FONT[c.headFont||c.font||'sans'], 'font-size':'17px','line-height':'1.9',
+        color:c.heading, 'letter-spacing':'1px', margin:'0' })+'>'+
+      esc(a[0] || '在这里写一句想让人记住的话')+'</p>'+
+  '</section>');
+
+defElem('tip', '小贴士', '带强调边线的补充说明', ['正文'], (c, a)=>
+  '<section '+st({ margin:'24px 0', padding:'14px 16px', 'background-color':c.tint,
+      'border-left':'3px solid '+c.accent, 'border-radius':'0 3px 3px 0' })+'>'+
+    '<p '+st({ 'font-size':'13px','line-height':'1.85', color:c.fgSoft||c.fg, margin:'0' })+'>'+
+      '<span '+st({ 'font-weight':'700', color:c.accentDeep||c.accent })+'>小贴士：</span>'+
+      esc(a[0] || '在这里写一句补充说明。')+'</p>'+
+  '</section>');
+
 const RE_HEAD   = /^(#{1,6})\s+(.*)$/;
 const RE_QUOTE  = /^>\s?(.*)$/;
 const RE_UL     = /^(\s*)[-*+]\s+(.*)$/;
@@ -732,10 +923,12 @@ const RE_HR     = /^\s*([-*_])\s*\1\s*\1[\s\-*_]*$/;
 const RE_IMG    = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;
 const RE_FENCE  = /^```(.*)$/;
 const RE_TSEP   = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+/* 装饰元件：::follow 第一段 | 第二段 —— 竖线分隔各字段 */
+const RE_ELEM   = /^::([a-z][a-z0-9-]*)\s*(.*)$/;
 
 function isBlockStart(l){
   return !l.trim() || RE_HEAD.test(l) || RE_QUOTE.test(l) || RE_UL.test(l) ||
-         RE_OL.test(l) || RE_HR.test(l) || RE_FENCE.test(l);
+         RE_OL.test(l) || RE_HR.test(l) || RE_FENCE.test(l) || RE_ELEM.test(l);
 }
 function splitRow(l){
   return l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(s=>s.trim());
@@ -775,6 +968,13 @@ function parseSource(src){
       i++;
       blocks.push({type:'code', tag, lines:buf});
       continue;
+    }
+    /* 装饰元件（::follow / ::card / ::past / ::quote / ::tip） */
+    if(m = line.match(RE_ELEM)){
+      if(ELEM_MAP[m[1]]){
+        blocks.push({type:'elem', elem:m[1], args:m[2].split('|').map(s=>s.trim())});
+        i++; continue;
+      }
     }
     /* 分割线 */
     if(RE_HR.test(line)){ blocks.push({type:'hr'}); i++; continue; }
@@ -855,11 +1055,15 @@ function inline(text, ctx){
 const state = {
   source:'', theme:null, appTheme:'light',
   wide:false, titleBlock:true, footnote:true, slim:true,
-  g:{ size:null, lh:null, ls:null, gap:null, family:'', color:'', useColor:false, indent:false }
+  g:{ size:null, lh:null, ls:null, gap:null, family:'', color:'', useColor:false, indent:false },
+  /* 图片资源表：key → { src, w, h, radius, align, shadow, bytes, name }
+     左侧文档里只写 `![图注](asset:key)`，图片本体存在这里。
+     这样左侧文稿始终是可读的纯文本，而且换主题、重新排版都不会丢图。 */
+  assets:{}
 };
 
 function getTheme(id){
-  return THEME_LIST.find(t=>t.id===id) || THEME_LIST[0];
+  return allThemes().find(t=>t.id===id) || THEME_LIST[0];
 }
 
 function renderArticle(){
@@ -927,18 +1131,37 @@ function renderArticle(){
       case 'hr':
         parts.push('<section '+st(S.hr)+'><p '+st(S.hrTxt)+'>'+esc(dividerTxt)+'</p></section>');
         break;
+      case 'elem': {
+        const def = ELEM_MAP[b.elem];
+        if(def) parts.push(def.build(T.cfg, b.args));
+        break;
+      }
       case 'code':
         parts.push('<section '+st(S.code)+'>'+
           (b.tag ? '<p '+st(S.codeTag)+'>'+esc(b.tag)+'</p>' : '') +
           b.lines.map(l=>'<p '+st(S.codeP)+'>'+(esc(l)||' ')+'</p>').join('')+
           '</section>');
         break;
-      case 'img':
+      case 'img': {
+        const asset = b.src.indexOf('asset:') === 0 ? state.assets[b.src.slice(6)] : null;
+        if(b.src.indexOf('asset:') === 0 && !asset){
+          parts.push('<section '+st(S.figure)+'><p '+st(S.figcaption)+'>'+
+            '［图片未找到：'+esc(b.src)+'，可能因为浏览器存储被清空，请重新插入］</p></section>');
+          break;
+        }
+        const imgStyle = Object.assign({}, S.img);
+        if(asset){
+          if(asset.radius != null) imgStyle['border-radius'] = asset.radius+'px';
+          if(asset.align === 'left')  imgStyle.margin = '0 auto 0 0';
+          if(asset.align === 'right') imgStyle.margin = '0 0 0 auto';
+          if(asset.shadow) imgStyle['box-shadow'] = '0 6px 18px rgba(16,24,40,.18)';
+        }
         parts.push('<section '+st(S.figure)+'>'+
-          '<img src="'+esc(b.src)+'" alt="'+esc(b.alt)+'" '+st(S.img)+'>'+
+          '<img src="'+esc(asset ? asset.src : b.src)+'" alt="'+esc(b.alt)+'" '+st(imgStyle)+'>'+
           (b.alt ? '<p '+st(S.figcaption)+'>'+esc(b.alt)+'</p>' : '')+
           '</section>');
         break;
+      }
       case 'table': {
         const head = '<tr>'+b.head.map(c=>'<td '+st(S.th)+'>'+inline(c, ctx)+'</td>').join('')+'</tr>';
         const body = b.rows.map(r=>'<tr>'+b.head.map((_,i)=>'<td '+st(S.td)+'>'+inline(r[i]||'', ctx)+'</td>').join('')+'</tr>').join('');
@@ -980,8 +1203,10 @@ function applyGlobal(){
   if(g.gap!=null) article.querySelectorAll('[data-gap]').forEach(el=>{ el.style.marginBottom = g.gap+'px'; });
   if(g.family) article.querySelectorAll('[data-fam]').forEach(el=>{ el.style.fontFamily = g.family; });
   if(g.useColor && g.color) article.querySelectorAll('[data-color]').forEach(el=>{ el.style.color = g.color; });
+  /* 缩进：面板勾选优先；未勾选但主题自带缩进（自定义主题存过）时也要保留 */
+  const themeIndent = !!state.theme.cfg.indent;
   article.querySelectorAll('[data-indent]').forEach(el=>{
-    el.style.textIndent = g.indent ? '2em' : '0';
+    el.style.textIndent = (g.indent || themeIndent) ? '2em' : '0';
   });
 }
 
@@ -1061,9 +1286,10 @@ function normalizeForWechat(root){
     hr.replaceWith(sec);
   });
 
-  /* 图片兜底样式 */
+  /* 图片兜底样式：只补没有 style 的（手动粘进来的），
+     已经带 style 的必须原样保留，否则「圆角 / 阴影 / 对齐」这些逐图设置会被抹掉 */
   root.querySelectorAll('img').forEach(img=>{
-    img.setAttribute('style', css(S.img));
+    if(!img.getAttribute('style')) img.setAttribute('style', css(S.img));
   });
 
   /* 清理属性：微信只认 style，其余全部去掉（根节点自身也要清） */
@@ -1171,6 +1397,43 @@ function toast(msg, isErr){
   toast._t = setTimeout(()=>{ el.className = 'toast'; }, 2600);
 }
 
+/* 居中输入框，返回 Promise<string|null>（确定给值，取消/关闭给 null）。
+   不用原生 prompt()：外观不可控，还会阻塞渲染。 */
+function askText(opt){
+  opt = opt || {};
+  const modal = $('#askModal'), inp = $('#askInput');
+  $('#askTitle').textContent = opt.title || '';
+  $('#askDesc').textContent  = opt.desc  || '';
+  $('#askDesc').hidden = !opt.desc;
+  $('#askOk').textContent = opt.ok || '确定';
+  inp.value = opt.value || '';
+  inp.placeholder = opt.placeholder || '';
+  modal.hidden = false;
+  inp.focus(); inp.select();
+  return new Promise(res=>{
+    const done = v=>{
+      modal.hidden = true;
+      $('#askOk').removeEventListener('click', onOk);
+      $('#askCancel').removeEventListener('click', onNo);
+      inp.removeEventListener('keydown', onKey);
+      modal.removeEventListener('mousedown', onBg);
+      res(v);
+    };
+    const onOk  = ()=>done(inp.value);
+    const onNo  = ()=>done(null);
+    const onKey = e=>{
+      e.stopPropagation();
+      if(e.key === 'Enter'){ e.preventDefault(); done(inp.value); }
+      if(e.key === 'Escape'){ e.preventDefault(); done(null); }
+    };
+    const onBg = e=>{ if(e.target === modal) done(null); };
+    $('#askOk').addEventListener('click', onOk);
+    $('#askCancel').addEventListener('click', onNo);
+    inp.addEventListener('keydown', onKey);
+    modal.addEventListener('mousedown', onBg);
+  });
+}
+
 async function copyRich(){
   const html = buildExportHtml();
   const text = article.innerText;
@@ -1236,6 +1499,14 @@ function restoreSel(){
   if(savedRange){
     sel.removeAllRanges();
     sel.addRange(savedRange);
+  }else{
+    /* 从没在正文里落过光标：收到末尾，否则 execCommand 不知道该往哪插 */
+    const r = document.createRange();
+    r.selectNodeContents(article);
+    r.collapse(false);
+    sel.removeAllRanges();
+    sel.addRange(r);
+    savedRange = r.cloneRange();
   }
 }
 function exec(cmd, val){
@@ -1259,16 +1530,81 @@ function setSelectionFontSize(px){
   });
 }
 
-function insertImageFile(file){
-  if(!file || !/^image\//.test(file.type)) return;
-  const fr = new FileReader();
-  fr.onload = ()=>{
-    restoreSel();
-    document.execCommand('insertHTML', false,
-      '<img src="'+fr.result+'" '+st(state.theme.styles.img)+'>');
-    toast('图片已插入（粘贴到公众号时会被自动转存）');
+/* ----------------------------------------------------------
+   图片：先用 canvas 重编码再入库
+   公众号正文宽度约 677px，2 倍屏也只要 1354px，所以默认压到 1080
+   已经很够看，而 base64 的体积是按像素数走的，不压会把字符预算直接吃光。
+   ---------------------------------------------------------- */
+const IMG_OPTS = { maxW:1080, quality:82, radius:null, align:'center', shadow:false, caption:'', format:'auto' };
+
+/* 缩到 32×32 扫一遍 alpha，判断要不要保留 PNG 的透明通道 */
+function imgHasAlpha(img){
+  const n = 32;
+  const cv = document.createElement('canvas');
+  cv.width = n; cv.height = n;
+  const cx = cv.getContext('2d');
+  cx.drawImage(img, 0, 0, n, n);
+  let d;
+  try{ d = cx.getImageData(0, 0, n, n).data; }catch(e){ return false; }
+  for(let i = 3; i < d.length; i += 4){ if(d[i] < 250) return true; }
+  return false;
+}
+
+function compressImage(file, maxW, quality, format){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      const scale = Math.min(1, maxW / (img.naturalWidth || maxW));
+      const w = Math.max(1, Math.round((img.naturalWidth  || maxW) * scale));
+      const h = Math.max(1, Math.round((img.naturalHeight || maxW) * scale));
+      const cv = document.createElement('canvas');
+      cv.width = w; cv.height = h;
+      const cx = cv.getContext('2d');
+      const keepAlpha = (format === 'png') ||
+                        (format === 'auto' && /^image\/(png|webp|gif)/.test(file.type) && imgHasAlpha(img));
+      if(!keepAlpha){ cx.fillStyle = '#FFFFFF'; cx.fillRect(0, 0, w, h); }
+      cx.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      const mime = keepAlpha ? 'image/png' : 'image/jpeg';
+      resolve({ src: cv.toDataURL(mime, keepAlpha ? undefined : quality / 100),
+                w, h, mime, origW: img.naturalWidth, origH: img.naturalHeight });
+    };
+    img.onerror = ()=>{ URL.revokeObjectURL(url); reject(new Error('decode failed')); };
+    img.src = url;
+  });
+}
+
+function nextAssetKey(){
+  let n = 1;
+  while(state.assets['img' + n]) n++;
+  return 'img' + n;
+}
+
+/* 图注会被塞进 ![...]，方括号和换行会破坏语法，先清掉 */
+function cleanCaption(s){
+  return (s || '').replace(/[\r\n]+/g, ' ').replace(/[[\]]/g, '').trim();
+}
+
+async function insertImageFile(file, opts){
+  if(!file || !/^image\//.test(file.type)){ toast('这个文件不是图片', true); return; }
+  const o = Object.assign({}, IMG_OPTS, opts || {});
+  o.caption = cleanCaption(o.caption);
+  let out;
+  try{ out = await compressImage(file, o.maxW, o.quality, o.format); }
+  catch(e){ toast('这张图片读不出来，换一张试试', true); return; }
+
+  const key = nextAssetKey();
+  state.assets[key] = {
+    src: out.src, w: out.w, h: out.h,
+    radius: o.radius, align: o.align, shadow: !!o.shadow,
+    name: file.name || '', kb: Math.round(out.src.length / 1024)
   };
-  fr.readAsDataURL(file);
+  sourceInsert('![' + o.caption + '](asset:' + key + ')');
+
+  const ratio = out.origW ? Math.round(out.w / out.origW * 100) : 100;
+  toast('图片已插入 ' + out.w + '×' + out.h + '（约 ' + state.assets[key].kb + 'KB，原图 ' +
+        out.origW + '×' + out.origH + ' 已缩到 ' + ratio + '%）');
 }
 
 /* 粘贴净化 */
@@ -1432,15 +1768,338 @@ $('#fgBtn').addEventListener('click', e=>{ e.preventDefault(); openPalette('fg',
 $('#bgBtn').addEventListener('click', e=>{ e.preventDefault(); openPalette('bg', e.currentTarget); });
 $('#gColorBtn').addEventListener('click', e=>{ e.preventDefault(); openPalette('g', e.currentTarget); });
 
+/* ==========================================================
+   7.5 浮层通用设施 + 插入（图片 / 表格 / 元件）
+   ========================================================== */
+const POPS = [];
+
+/* 浮层是 position:fixed，页面一滚就会跟按钮错位。
+   早期做法是「一滚就关」，但浏览器把浮层滚进视口这种自己也触发 scroll，
+   浮层会在刚打开时被自己关掉。改成跟着锚点重新定位。 */
+function positionPop(pop){
+  const anchor = pop._anchor;
+  if(!anchor) return;                        /* 还没挂到锚点上，交给 placePop */
+  if(!anchor.isConnected){ pop.hidden = true; return; }
+  const r = anchor.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+  let top = r.bottom + 6;
+  if(top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  pop.style.top = top + 'px';
+}
+function placePop(pop, anchor){
+  pop._anchor = anchor;
+  pop.hidden = false;
+  positionPop(pop);
+}
+function closePops(){
+  POPS.forEach(p => { p.hidden = true; });
+  closeThemePop();
+  closePalette();
+}
+function bindPopDismiss(pop, anchors){
+  POPS.push(pop);
+  document.addEventListener('click', e=>{
+    if(pop.hidden) return;
+    /* 浮层内部点了会重绘自己的按钮（表格的增删行列），这时 e.target 已经
+       脱离文档，closest 一路走到 null，会被误判成「点了外面」。 */
+    if(e.target.isConnected === false) return;
+    if(pop.contains(e.target)) return;
+    /* 从另一个浮层里点开的新浮层，会跟这次点击冒泡到 document。
+       不排掉「点在任意浮层内」的情况，新浮层会被自己这个监听立刻关掉。 */
+    if(e.target.closest && e.target.closest('.pop,.themepop,.palette')) return;
+    if(anchors.some(sel => e.target.closest && e.target.closest(sel))) return;
+    pop.hidden = true;
+  });
+  window.addEventListener('resize', ()=>{ if(!pop.hidden) positionPop(pop); });
+  window.addEventListener('scroll', e=>{
+    if(pop.hidden) return;
+    if(pop.contains(e.target)) return;   /* 浮层内部的滚动不该影响定位 */
+    positionPop(pop);
+  }, true);
+}
+
+/* 插入内容一律写回左侧文档 —— 那里是唯一数据源，
+   所以插进去的东西能跟着文稿一起存下来，换主题也不会丢。
+   插入点取左侧光标；文档没被点过就追加到末尾。 */
+function sourceInsert(text){
+  const ta = $('#source');
+  const focused = (document.activeElement === ta);
+  const pos = (focused && ta.selectionStart != null) ? ta.selectionStart : ta.value.length;
+  const before = ta.value.slice(0, pos);
+  const after  = ta.value.slice(pos);
+  const padL = (before && !/\n\n$/.test(before)) ? (/\n$/.test(before) ? '\n' : '\n\n') : '';
+  const padR = (after && !/^\n/.test(after)) ? '\n\n' : '';
+  const next = before + padL + text + padR + after;
+  ta.value = next;
+  state.source = next;
+  const caret = (before + padL + text).length;
+  try{ ta.setSelectionRange(caret, caret); }catch(e){}
+  renderArticle();
+  save();
+}
+
+/* 「插入 ▾」菜单 */
+const insertPop = document.createElement('div');
+insertPop.className = 'pop';
+insertPop.hidden = true;
+insertPop.innerHTML =
+  '<p class="pop-h">插入</p>'+
+  '<div class="el-list" style="grid-template-columns:1fr;width:196px">'+
+    '<button type="button" class="el-item" data-ins="img"><b>图片</b><i>压缩、圆角、图注</i></button>'+
+    '<button type="button" class="el-item" data-ins="table"><b>表格</b><i>可视化编辑行列</i></button>'+
+    '<button type="button" class="el-item" data-ins="elem"><b>装饰元件</b><i>关注卡、名片、往期回顾</i></button>'+
+  '</div>';
+document.body.appendChild(insertPop);
+bindPopDismiss(insertPop, ['#btnInsert']);
+insertPop.addEventListener('click', e=>{
+  const b = e.target.closest('[data-ins]');
+  if(!b) return;
+  insertPop.hidden = true;
+  const k = b.dataset.ins;
+  if(k === 'img')        openImgPop($('#btnInsert'));
+  else if(k === 'table') openTblPop($('#btnInsert'));
+  else                   openElemPop($('#btnInsert'));
+});
+$('#btnInsert').addEventListener('click', e=>{
+  e.preventDefault();
+  if(insertPop.hidden) placePop(insertPop, e.currentTarget);
+  else insertPop.hidden = true;
+});
+
+/* 装饰元件选择器 */
+const elemPop = document.createElement('div');
+elemPop.className = 'pop';
+elemPop.hidden = true;
+elemPop.innerHTML =
+  '<p class="pop-h">装饰元件<small>写进左侧文档，可继续编辑</small></p>'+
+  '<div class="el-list">'+ Object.keys(ELEM_MAP).map(id=>{
+    const el = ELEM_MAP[id];
+    return '<button type="button" class="el-item" data-el="'+el.id+'">'+
+      '<b>'+esc(el.name)+'</b><i>'+esc(el.desc)+'</i></button>';
+  }).join('') +'</div>'+
+  '<p class="pop-hint">插入后左侧会出现一行 <b>::'+'名称</b>，把占位文字改掉即可；'+
+  '用竖线分隔各段。右侧实时更新，也会跟着文稿一起保存。</p>';
+document.body.appendChild(elemPop);
+bindPopDismiss(elemPop, ['#btnInsert']);
+elemPop.addEventListener('click', e=>{
+  const b = e.target.closest('[data-el]');
+  if(!b) return;
+  const el = ELEM_MAP[b.dataset.el];
+  elemPop.hidden = true;
+  if(!el) return;
+  sourceInsert('::' + el.id);
+  toast('已插入「' + el.name + '」，在左侧改掉占位文字即可');
+});
+function openElemPop(anchor){ placePop(elemPop, anchor); }
+
 const imagePicker = document.createElement('input');
 imagePicker.type = 'file';
 imagePicker.accept = 'image/*';
 imagePicker.hidden = true;
 document.body.appendChild(imagePicker);
+
+/* ---------- 图片浮层：先定好压缩参数，再挑文件 ---------- */
+const imgPop = document.createElement('div');
+imgPop.className = 'pop';
+imgPop.hidden = true;
+imgPop.innerHTML =
+  '<p class="pop-h">插入图片<small>本地压缩后入库</small></p>' +
+  '<div class="pop-row"><label>最大宽</label>' +
+    '<select id="ipMaxW">' +
+      '<option value="640">640px（小图）</option>' +
+      '<option value="800">800px</option>' +
+      '<option value="1080" selected>1080px（推荐）</option>' +
+      '<option value="1280">1280px（大图）</option>' +
+      '<option value="9999">不缩放</option>' +
+    '</select></div>' +
+  '<div class="pop-row"><label>质量</label>' +
+    '<input type="range" id="ipQ" min="50" max="95" step="1" value="82">' +
+    '<span class="pv" id="ipQv">82%</span></div>' +
+  '<div class="pop-row"><label>格式</label>' +
+    '<select id="ipFmt">' +
+      '<option value="auto" selected>自动（推荐）</option>' +
+      '<option value="jpeg">JPEG（更小）</option>' +
+      '<option value="png">PNG（无损）</option>' +
+    '</select></div>' +
+  '<div class="pop-row"><label>圆角</label>' +
+    '<select id="ipRadius">' +
+      '<option value="" selected>跟主题</option>' +
+      '<option value="0">直角</option>' +
+      '<option value="4">4px</option>' +
+      '<option value="8">8px</option>' +
+      '<option value="14">14px</option>' +
+      '<option value="999">圆形边</option>' +
+    '</select></div>' +
+  '<div class="pop-row"><label>对齐</label>' +
+    '<select id="ipAlign">' +
+      '<option value="center" selected>居中</option>' +
+      '<option value="left">左对齐</option>' +
+      '<option value="right">右对齐</option>' +
+    '</select></div>' +
+  '<div class="pop-row"><label>投影</label>' +
+    '<input type="checkbox" id="ipShadow" style="width:14px;height:14px;accent-color:var(--brand)">' +
+    '<span style="font-size:11.5px;color:var(--text3)">给图片加一点阴影</span></div>' +
+  '<div class="pop-row"><label>图注</label>' +
+    '<input type="text" id="ipCap" placeholder="可留空，显示在图片下方" spellcheck="false"></div>' +
+  '<p class="pop-hint">图片会先在浏览器里压到上面的宽度再插入，文稿里只记一行 ' +
+    '<b>![图注](asset:…)</b>，所以左侧始终保持可读，换主题也不会丢图。</p>' +
+  '<div class="pop-foot"><button type="button" class="btn primary" id="ipGo">选择图片…</button></div>';
+document.body.appendChild(imgPop);
+bindPopDismiss(imgPop, ['#btnInsert']);
+function openImgPop(anchor){ placePop(imgPop, anchor); }
+
+$('#ipQ').addEventListener('input', e=>{ $('#ipQv').textContent = e.target.value + '%'; });
+$('#ipGo').addEventListener('click', ()=>{ imagePicker.click(); });
+
 imagePicker.addEventListener('change', ()=>{
-  if(imagePicker.files[0]) insertImageFile(imagePicker.files[0]);
+  const f = imagePicker.files[0];
   imagePicker.value = '';
+  if(!f) return;
+  const radiusRaw = $('#ipRadius').value;
+  const opts = {
+    maxW:    +$('#ipMaxW').value || 1080,
+    quality: +$('#ipQ').value || 82,
+    radius:  radiusRaw === '' ? null : +radiusRaw,
+    align:   $('#ipAlign').value,
+    shadow:  $('#ipShadow').checked,
+    caption: $('#ipCap').value,
+    format:  $('#ipFmt').value
+  };
+  imgPop.hidden = true;
+  insertImageFile(f, opts);
 });
+
+/* ---------- 表格可视化编辑 ---------- */
+let tblState = { cells: [], cur:{ r:0, c:0 } };
+
+function freshTable(rows, cols){
+  const cells = [];
+  for(let i = 0; i < rows; i++){
+    const row = [];
+    for(let j = 0; j < cols; j++) row.push('');
+    cells.push(row);
+  }
+  return { cells, cur:{ r:0, c:0 } };
+}
+tblState = freshTable(3, 3);
+
+const tblPop = document.createElement('div');
+tblPop.className = 'pop';
+tblPop.hidden = true;
+document.body.appendChild(tblPop);
+bindPopDismiss(tblPop, ['#btnInsert']);
+
+/* 输入框的 value 属性要单独转义，不能复用 esc（那是给正文文本用的） */
+function attrEsc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function renderTblEditor(){
+  const rows = tblState.cells.length;
+  const cols = rows ? tblState.cells[0].length : 0;
+  let body = '';
+  for(let r = 0; r < rows; r++){
+    body += '<tr' + (r === 0 ? ' class="head"' : '') + '>';
+    for(let c = 0; c < cols; c++){
+      body += '<td><input type="text" spellcheck="false" data-r="' + r + '" data-c="' + c + '"' +
+        ' value="' + attrEsc(tblState.cells[r][c]) + '"' +
+        ' placeholder="' + (r === 0 ? '表头' : '内容') + '"></td>';
+    }
+    body += '</tr>';
+  }
+  tblPop.innerHTML =
+    '<p class="pop-h">编辑表格<span class="tlen">' + rows + ' 行 × ' + cols + ' 列</span></p>' +
+    '<div class="tblwrap"><table class="tbled"><tbody>' + body + '</tbody></table></div>' +
+    '<div class="tblbar">' +
+      '<button type="button" data-op="rowAdd">＋ 行</button>' +
+      '<button type="button" data-op="rowDel">－ 行</button>' +
+      '<button type="button" data-op="colAdd">＋ 列</button>' +
+      '<button type="button" data-op="colDel">－ 列</button>' +
+      '<button type="button" data-op="clear">清空</button>' +
+    '</div>' +
+    '<p class="pop-hint">第一行自动作为表头；行列按钮作用于光标所在的那一行 / 那一列。</p>' +
+    '<div class="pop-foot">' +
+      '<button type="button" class="btn" data-op="cancel">取消</button>' +
+      '<button type="button" class="btn primary" data-op="insert">插入表格</button>' +
+    '</div>';
+  const focusCell = tblPop.querySelector('input[data-r="' + tblState.cur.r + '"][data-c="' + tblState.cur.c + '"]');
+  if(focusCell) focusCell.focus();
+  /* 增删列会改变浮层宽度，位置必须按新尺寸重算，
+     否则按钮会被推到视口外，点不到了 */
+  if(!tblPop.hidden) positionPop(tblPop);
+}
+
+/* 结构变化前先把输入框里的内容读回来，否则重绘会把刚敲的字抹掉 */
+function syncTblCells(){
+  const trs = [...tblPop.querySelectorAll('table.tbled tr')];
+  if(!trs.length) return;
+  tblState.cells = trs.map(tr => [...tr.children].map(td=>{
+    const i = td.querySelector('input');
+    return i ? i.value : '';
+  }));
+}
+
+function tblOp(op){
+  if(op === 'cancel'){ tblPop.hidden = true; return; }
+  if(op === 'insert'){
+    syncTblCells();
+    const cells = tblState.cells;
+    if(!cells.length || !cells[0].length){ toast('表格至少要有 1 行 1 列', true); return; }
+    const cell = v => (v || '').replace(/\|/g, '｜').replace(/[\r\n]+/g, ' ').trim() || ' ';
+    const lines = cells.map(row => '| ' + row.map(cell).join(' | ') + ' |');
+    const sep = '| ' + cells[0].map(()=>'---').join(' | ') + ' |';
+    tblPop.hidden = true;
+    sourceInsert([lines[0], sep, ...lines.slice(1)].join('\n'));
+    toast('表格已插入 ' + cells.length + ' 行 × ' + cells[0].length + ' 列');
+    return;
+  }
+
+  syncTblCells();
+  let cells = tblState.cells.map(row => row.slice());
+  const cols = cells[0] ? cells[0].length : 0;
+  const r = Math.min(tblState.cur.r, cells.length - 1);
+  const c = Math.min(tblState.cur.c, cols - 1);
+
+  if(op === 'rowAdd'){ cells.splice(r + 1, 0, new Array(cols).fill('')); tblState.cur.r = r + 1; }
+  else if(op === 'rowDel'){
+    if(cells.length <= 1){ toast('至少要留一行', true); return; }
+    cells.splice(r, 1);
+    tblState.cur.r = Math.max(0, r - 1);
+  }
+  else if(op === 'colAdd'){
+    cells.forEach(row => row.splice(c + 1, 0, ''));
+    tblState.cur.c = c + 1;
+  }
+  else if(op === 'colDel'){
+    if(cols <= 1){ toast('至少要留一列', true); return; }
+    cells.forEach(row => row.splice(c, 1));
+    tblState.cur.c = Math.max(0, c - 1);
+  }
+  else if(op === 'clear'){ cells = cells.map(row => row.map(()=>'')); }
+  else { return; }
+
+  tblState.cells = cells;
+  renderTblEditor();
+}
+
+tblPop.addEventListener('click', e=>{
+  const b = e.target.closest('[data-op]');
+  if(b) tblOp(b.dataset.op);
+});
+tblPop.addEventListener('focusin', e=>{
+  const i = e.target.closest ? e.target.closest('input[data-r]') : null;
+  if(!i) return;
+  tblState.cur.r = +i.dataset.r;
+  tblState.cur.c = +i.dataset.c;
+});
+
+function openTblPop(anchor){
+  if(!tblState.cells.length) tblState = freshTable(3, 3);
+  renderTblEditor();
+  placePop(tblPop, anchor);
+}
 
 /* 同步按钮状态（粗体/斜体等的按下态） */
 function syncToolbarState(){
@@ -1466,12 +2125,22 @@ themePop.className = 'themepop';
 themePop.hidden = true;
 document.body.appendChild(themePop);
 
-function buildThemePop(){
-  themePop.innerHTML = THEME_LIST.map(t=>
-    '<button type="button" class="tp-item" data-id="'+t.id+'" title="'+esc(t.name+' · '+t.desc)+'">'+
-      '<span class="tp-dots">'+t.swatch.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>'+
+function themeChip(t){
+  return '<button type="button" class="tp-item" data-id="'+t.id+'" title="'+esc(t.name+' · '+(t.desc||''))+'">'+
+      '<span class="tp-dots">'+themeSwatch(t).map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>'+
       '<span class="tp-nm">'+esc(t.name)+'</span>'+
-    '</button>').join('');
+      (t.custom ? '<span class="tp-del" data-del="'+t.id+'" title="删除这个主题">×</span>' : '')+
+    '</button>';
+}
+function buildThemePop(){
+  themePop.innerHTML =
+    THEME_LIST.map(themeChip).join('') +
+    '<div class="tp-group"><span>'+(customThemes.length?'我的主题':'自定义主题')+'</span><i></i>'+
+      '<button type="button" id="tpSave">另存当前</button>'+
+      '<button type="button" id="tpExport"'+(customThemes.length?'':' disabled')+'>导出</button>'+
+      '<button type="button" id="tpImport">导入</button>'+
+    '</div>'+
+    customThemes.map(themeChip).join('');
 }
 function closeThemePop(){ themePop.hidden = true; }
 function openThemePop(anchor){
@@ -1505,6 +2174,11 @@ $('#btnTheme').addEventListener('click', e=>{
   if(themePop.hidden) openThemePop(e.currentTarget); else closeThemePop();
 });
 themePop.addEventListener('click', e=>{
+  const del = e.target.closest('[data-del]');
+  if(del){ removeCustomTheme(del.dataset.del); return; }
+  if(e.target.closest('#tpSave')){ closeThemePop(); saveCurrentAsTheme(); return; }
+  if(e.target.closest('#tpExport')){ exportThemes(); return; }
+  if(e.target.closest('#tpImport')){ themePicker.click(); return; }
   const b = e.target.closest('.tp-item');
   if(!b){ return; }
   const prev = state.theme.id;
@@ -1516,6 +2190,121 @@ themePop.addEventListener('click', e=>{
     toast('已套用「'+state.theme.name+'」主题');
   }
 });
+/* ---------- 我的主题：存 / 删 / 导出 / 导入 ---------- */
+/* 把当前主题的 cfg 与「全局样式」面板上的调整合并成一份新的主题配置。
+   面板上的字号/行距等还没写回 cfg，不合并的话存下来就不是用户此刻看到的版本。 */
+function currentThemeAsPreset(name){
+  const cfg = Object.assign({}, state.theme.cfg);
+  const g = state.g;
+  if(g.size)      cfg.base = g.size;
+  if(g.lh)        cfg.lh   = g.lh;
+  if(g.ls != null)  cfg.ls  = g.ls;
+  if(g.gap != null) cfg.gap = g.gap;
+  if(g.family){
+    const key = Object.keys(FONT).find(k => FONT[k] === g.family);
+    if(key) cfg.font = key;
+    else    cfg.fontCustom = g.family;   /* 「苹方」不是 FONT 的 key，只能原样存 */
+  }
+  if(g.useColor && g.color) cfg.fg = g.color;
+  if(g.indent) cfg.indent = true;
+  return {
+    id: 'my-' + Date.now().toString(36),
+    name: name,
+    desc: '我的主题',
+    custom: true,
+    cfg: cfg
+  };
+}
+
+async function saveCurrentAsTheme(){
+  const t = getTheme(state.theme.id);
+  const name = await askText({
+    title: '存为我的主题',
+    desc: '保存当前配色与排版参数。它会出现在主题列表底部，导出后可以分享给别人。',
+    value: t.custom ? t.name : (t.name + ' · 改'),
+    ok: '保存'
+  });
+  if(name === null) return;
+  const nm = name.trim().slice(0, 20);
+  if(!nm){ toast('名字不能为空', true); return; }
+  if(allThemes().some(x => x.name === nm)){ toast('已经有同名的主题了，换个名字吧', true); return; }
+  const preset = currentThemeAsPreset(nm);
+  customThemes.push(preset);
+  saveCustomThemes();
+  buildThemePop();
+  selectTheme(preset.id);
+  syncGlobalFromTheme(true);
+  renderArticle();
+  paintTheme();
+  toast('已存为「' + nm + '」，在主题列表底部可以找到');
+}
+
+function removeCustomTheme(id){
+  const i = customThemes.findIndex(t => t.id === id);
+  if(i < 0) return;
+  const nm = customThemes[i].name;
+  const wasCurrent = (state.theme.id === id);
+  customThemes.splice(i, 1);
+  saveCustomThemes();
+  buildThemePop();
+  if(wasCurrent){
+    selectTheme(THEME_LIST[0].id);
+    syncGlobalFromTheme(true);
+    renderArticle();
+  }
+  paintTheme();
+  toast('已删除「' + nm + '」');
+}
+
+function exportThemes(){
+  if(!customThemes.length){ toast('还没有自定义主题可以导出', true); return; }
+  const blob = new Blob([JSON.stringify(customThemes, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '我的公众号主题.json';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('已导出 ' + customThemes.length + ' 套主题');
+}
+
+const themePicker = document.createElement('input');
+themePicker.type = 'file';
+themePicker.accept = '.json,application/json';
+themePicker.hidden = true;
+document.body.appendChild(themePicker);
+themePicker.addEventListener('change', ()=>{
+  const f = themePicker.files[0];
+  themePicker.value = '';
+  if(!f) return;
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    let arr;
+    try{ arr = JSON.parse(fr.result); }catch(e){ toast('文件不是合法的 JSON', true); return; }
+    if(!Array.isArray(arr)) arr = [arr];
+    let n = 0;
+    arr.forEach(t=>{
+      if(!t || !t.cfg || typeof t.cfg !== 'object') return;
+      const name = String(t.name || '导入的主题').trim().slice(0, 20);
+      if(!name || allThemes().some(x => x.name === name)) return;
+      customThemes.push({
+        id: 'my-' + Date.now().toString(36) + '-' + (n++),
+        name: name,
+        desc: String(t.desc || '导入的主题').slice(0, 30),
+        custom: true,
+        cfg: t.cfg
+      });
+    });
+    if(!n){ toast('没有可导入的主题（重名或格式不对）', true); return; }
+    saveCustomThemes();
+    buildThemePop();
+    paintTheme();
+    toast('已导入 ' + n + ' 套主题，在列表底部可以找到');
+  };
+  fr.readAsText(f, 'utf-8');
+});
+
+$('#btnSaveTheme').addEventListener('click', saveCurrentAsTheme);
+
 document.addEventListener('click', e=>{
   if(themePop.hidden) return;
   if(themePop.contains(e.target)) return;
@@ -1722,19 +2511,31 @@ function updateStats(){
    10. 本地记忆
    ========================================================== */
 function save(){
+  /* 这个函数在 init() 早期就会被 setAppTheme 调到，那时 state.theme 还没建好。
+     它是纯副作用，任何时候都不能抛错，否则会把整个初始化打断。 */
+  const payload = {
+    source: state.source,
+    theme: (state.theme && state.theme.id) || 'gu-feng',
+    appTheme: state.appTheme,
+    wide: state.wide,
+    titleBlock: state.titleBlock,
+    footnote: state.footnote,
+    slim: state.slim,
+    g: state.g,
+    assets: state.assets,
+    panel: !$('#stylePanel').hidden
+  };
   try{
-    localStorage.setItem('wxt-studio', JSON.stringify({
-      source: state.source,
-      theme: state.theme.id,
-      appTheme: state.appTheme,
-      wide: state.wide,
-      titleBlock: state.titleBlock,
-      footnote: state.footnote,
-      slim: state.slim,
-      g: state.g,
-      panel: !$('#stylePanel').hidden
-    }));
-  }catch(e){}
+    localStorage.setItem('wxt-studio', JSON.stringify(payload));
+  }catch(e){
+    /* 图片多了会撑爆 localStorage（一般 5MB）。丢图片先保住文稿。 */
+    delete payload.assets;
+    try{ localStorage.setItem('wxt-studio', JSON.stringify(payload)); }catch(e2){ return; }
+    if(!save._warned){
+      save._warned = true;
+      setTimeout(()=>toast('文稿已保存，但图片太多超出浏览器存储上限，刷新后图片需要重新插入', true), 300);
+    }
+  }
 }
 function load(){
   let d = null;
@@ -1821,6 +2622,7 @@ function init(){
     state.footnote   = d.footnote !== false;
     state.slim       = d.slim !== false;
     if(d.g) state.g  = Object.assign(state.g, d.g);
+    if(d.assets && typeof d.assets === 'object') state.assets = d.assets;
     $('#gFootnote').checked  = state.footnote;
     $('#gTitleBlock').checked = state.titleBlock;
     $('#gSlim').checked      = state.slim;

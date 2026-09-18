@@ -74,6 +74,23 @@ PASS | 插入分割线按钮可用 | hr/小节数=8
 PASS | 复制到剪贴板成功且含 text/html | {"ok":true,"types":["text/plain","text/html"]}
 PASS | 刷新后记忆黑夜主题 | dark
 PASS | 刷新后记住上次导入的文稿
+PASS | 「插入 ▾」菜单有图片 / 表格 / 装饰元件三项 | img,table,elem
+PASS | 装饰元件选择器有 5 个元件 | {"n":5}
+PASS | 元件写入左侧文档并渲染出关注卡 | {"src":true,"out":true}
+PASS | 表格编辑器默认 3×3 且带行列按钮 | {"rows":3,"cols":3,"bars":["rowAdd","rowDel","colAdd","colDel","clear"]}
+PASS | 表格 ＋行 / ＋列 生效并更新尺寸标签 | 4 行 × 4 列
+PASS | 表格插入为 markdown（表头 + 分隔行） | | 品种 | 产区 | 甜度 | 价格 | / | --- | --- | --- | --- |
+PASS | 表格在预览区渲染成 4×4（与样本稿原有的表格并存） | {"md":"| 品种 | 产区 | 甜度 | 价格 |","sep":"| --- | --- | --- | --- |","tables":2,"rows":4,"cols":4,"first":"品种产区甜度价格"}
+PASS | 表格首行是填进去的表头 | 品种产区甜度价格
+PASS | 图片参数浮层打开且有「选择图片」按钮
+PASS | 图片插入为 asset 引用（左侧不塞 base64）
+PASS | 图片缩到 1080 宽 | 1080×810
+PASS | 缩图后体积远小于原图 | 8KB
+PASS | 逐图圆角 / 左对齐 / 阴影都写进了 style | display:block;max-width:100%;height:auto;margin:0 auto 0 0;border-radius:8px;box-shadow:0 6px 18px rgba(16,24,40,.18)
+PASS | 图注渲染在图片下方 | 压缩后的图
+PASS | 换主题后图片 / 表格 / 元件都还在 | {"img":true,"table":true,"elem":true,"keepAsset":true}
+PASS | 导出成品保留了图片圆角与阴影 | 2 张图, 末张=display:block;max-width:100%;height:auto;margin:0 auto 0 0;border-radius:8px;box-shadow:0 6px 18px rgba(16,24,40,.18)
+PASS | 导出成品里的样本图样式也没被破坏
 PASS | 全流程无未捕获错误
 
-合计：77 通过 / 0 失败
+合计：94 通过 / 0 失败

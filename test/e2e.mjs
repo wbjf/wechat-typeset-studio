@@ -2,7 +2,7 @@
  * 公众号排版工作台 —— 端到端验证
  *
  * 用真实 Chrome 打开 index.html，逐项断言渲染结果、微信合规性与交互链路。
- * 共 59 项，全部通过则退出码为 0。
+ * 全部通过则退出码为 0（断言条数见报告末尾的合计）。
  *
  * 运行：
  *   npm install
@@ -15,6 +15,7 @@
  * 产物：test/artifacts/*.png（界面截图）、test/verification-report.txt（断言明细）
  */
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { createRequire } from 'module';
@@ -89,7 +90,13 @@ const page = await ctx.newPage();
 const errors = [];
 page.on('pageerror', e => errors.push('[pageerror] ' + e.message));
 page.on('console', m => {
-  if (m.type() === 'error' && !/favicon/.test(m.text())) errors.push('[console] ' + m.text());
+  /* 只放行两类噪音：favicon，以及样本稿里那张外部占位图（example.com/a.png）
+     在离线/代理不通时的资源加载失败。这里要抓的是「应用自身的报错」。 */
+  if (m.type() !== 'error') return;
+  const t = m.text();
+  if (/favicon/.test(t)) return;
+  if (/Failed to load resource/.test(t) && /net::ERR_|example\.com/.test(t)) return;
+  errors.push('[console] ' + t);
 });
 
 await page.goto(PAGE, { waitUntil: 'load' });
@@ -584,6 +591,208 @@ const persisted = await page.evaluate(() => ({
 }));
 ok('刷新后记忆黑夜主题', persisted.app === 'dark', persisted.app);
 ok('刷新后记住上次导入的文稿', persisted.srcHasTest);
+
+/* ---------- 11. 插入：图片 / 表格 / 装饰元件 ---------- */
+const insItems = await page.evaluate(async () => {
+  document.querySelector('#btnInsert').click();
+  await new Promise(r => setTimeout(r, 200));
+  const p = [...document.querySelectorAll('.pop')].find(x => !x.hidden && x.querySelector('[data-ins]'));
+  return p ? [...p.querySelectorAll('[data-ins]')].map(b => b.dataset.ins) : [];
+});
+ok('「插入 ▾」菜单有图片 / 表格 / 装饰元件三项',
+   insItems.join(',') === 'img,table,elem', insItems.join(','));
+
+/* 11a. 装饰元件 */
+await page.evaluate(async () => {
+  const p = [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'));
+  p.querySelector('[data-ins="elem"]').click();
+  await new Promise(r => setTimeout(r, 250));
+});
+const elemPop = await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /装饰元件/.test(h.textContent);
+  });
+  if (!p || p.hidden) return null;
+  return { n: p.querySelectorAll('[data-el]').length };
+});
+ok('装饰元件选择器有 5 个元件', elemPop && elemPop.n === 5, JSON.stringify(elemPop));
+
+await page.evaluate(async () => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /装饰元件/.test(h.textContent);
+  });
+  p.querySelector('[data-el="follow"]').click();
+  await new Promise(r => setTimeout(r, 250));
+});
+const elemRes = await page.evaluate(() => ({
+  src: /^::follow/m.test(document.querySelector('#source').value),
+  out: /点击上方蓝字关注我/.test(document.querySelector('#article').innerHTML)
+}));
+ok('元件写入左侧文档并渲染出关注卡', elemRes.src && elemRes.out, JSON.stringify(elemRes));
+
+/* 11b. 表格可视化编辑 */
+await page.evaluate(async () => {
+  document.querySelector('#btnInsert').click();
+  await new Promise(r => setTimeout(r, 200));
+  const p = [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'));
+  p.querySelector('[data-ins="table"]').click();
+  await new Promise(r => setTimeout(r, 250));
+});
+const tbl0 = await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /编辑表格/.test(h.textContent);
+  });
+  if (!p || p.hidden) return null;
+  const trs = [...p.querySelectorAll('table.tbled tr')];
+  return { rows: trs.length, cols: trs[0].children.length,
+           bars: [...p.querySelectorAll('.tblbar button')].map(b => b.dataset.op) };
+});
+ok('表格编辑器默认 3×3 且带行列按钮',
+   tbl0 && tbl0.rows === 3 && tbl0.cols === 3 && tbl0.bars.length === 5, JSON.stringify(tbl0));
+
+await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /编辑表格/.test(h.textContent);
+  });
+  p.querySelector('input').focus();
+});
+await page.click('.tblbar button[data-op="rowAdd"]');
+await page.waitForTimeout(150);
+await page.click('.tblbar button[data-op="colAdd"]');
+await page.waitForTimeout(200);
+const tblSize = await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /编辑表格/.test(h.textContent);
+  });
+  return (p.querySelector('.tlen') || {}).textContent || '';
+});
+ok('表格 ＋行 / ＋列 生效并更新尺寸标签', /4 行 × 4 列/.test(tblSize), tblSize);
+
+await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /编辑表格/.test(h.textContent);
+  });
+  const vals = ['品种', '产区', '甜度', '价格',
+                '麒麟瓜', '海南', '高', '3.5元',
+                '8424', '上海', '中', '2.8元',
+                '黑美人', '广西', '中', '2.2元'];
+  [...p.querySelectorAll('input')].forEach((i, k) => { if (vals[k] !== undefined) i.value = vals[k]; });
+});
+await page.click('.pop .btn.primary[data-op="insert"]');
+await page.waitForTimeout(350);
+const tblRes = await page.evaluate(() => {
+  /* 样本稿自带一张 3×2 的表格，所以要看「最后一个」——新插入的排在末尾 */
+  const lines = document.querySelector('#source').value.split('\n');
+  const mdIdx = lines.findIndex(l => /^\|\s*品种\s*\|\s*产区\s*\|\s*甜度\s*\|\s*价格\s*\|$/.test(l.trim()));
+  const secs = [...document.querySelectorAll('#article section')].filter(s => s.querySelector('table'));
+  const sec = secs[secs.length - 1];
+  const trs = sec ? [...sec.querySelectorAll('tr')] : [];
+  return {
+    md: mdIdx >= 0 ? lines[mdIdx].trim() : '',
+    sep: mdIdx >= 0 && lines[mdIdx + 1] ? lines[mdIdx + 1].trim() : '',
+    tables: secs.length, rows: trs.length, cols: trs[0] ? trs[0].children.length : 0,
+    first: trs[0] ? trs[0].textContent : ''
+  };
+});
+ok('表格插入为 markdown（表头 + 分隔行）',
+   /^\|\s*品种\s*\|\s*产区\s*\|\s*甜度\s*\|\s*价格\s*\|$/.test(tblRes.md) &&
+   /^\|\s*---\s*\|/.test(tblRes.sep), tblRes.md + ' / ' + tblRes.sep);
+ok('表格在预览区渲染成 4×4（与样本稿原有的表格并存）',
+   tblRes.rows === 4 && tblRes.cols === 4 && tblRes.tables === 2, JSON.stringify(tblRes));
+ok('表格首行是填进去的表头', tblRes.first === '品种产区甜度价格', tblRes.first);
+
+/* 11c. 图片：压缩 + 入库 + 逐图样式 */
+const shot = await page.evaluate(() => {
+  const cv = document.createElement('canvas');
+  cv.width = 1600; cv.height = 1200;
+  const cx = cv.getContext('2d');
+  cx.fillStyle = '#1b6b50'; cx.fillRect(0, 0, 1600, 1200);
+  return cv.toDataURL('image/png');
+});
+const TMPIMG = path.join(os.tmpdir(), 'wxt-studio-e2e-img.png');
+fs.writeFileSync(TMPIMG, Buffer.from(shot.split(',')[1], 'base64'));
+
+await page.evaluate(async () => {
+  document.querySelector('#btnInsert').click();
+  await new Promise(r => setTimeout(r, 200));
+  const p = [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'));
+  p.querySelector('[data-ins="img"]').click();
+  await new Promise(r => setTimeout(r, 250));
+});
+const imgPopOpen = await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h');
+    return h && /插入图片/.test(h.textContent);
+  });
+  return !!(p && !p.hidden && p.querySelector('#ipGo'));
+});
+ok('图片参数浮层打开且有「选择图片」按钮', imgPopOpen);
+
+await page.selectOption('#ipMaxW', '1080');
+await page.selectOption('#ipRadius', '8');
+await page.selectOption('#ipAlign', 'left');
+await page.check('#ipShadow');
+await page.fill('#ipCap', '压缩后的图');
+await (await page.$('input[type=file][accept="image/*"]')).setInputFiles(TMPIMG);
+await page.waitForTimeout(1200);
+
+const imgRes = await page.evaluate(() => {
+  const a = state.assets.img1;
+  /* 样本稿里也有一张图，取最后一个才是刚插进来的 */
+  const ims = [...document.querySelectorAll('#article img')];
+  const im = ims[ims.length - 1];
+  const cap = im && im.parentElement.querySelector('p');
+  return {
+    srcLine: /!\[压缩后的图\]\(asset:img1\)/.test(document.querySelector('#source').value),
+    assetW: a ? a.w : 0, assetH: a ? a.h : 0, assetKb: a ? a.kb : 0, total: ims.length,
+    style: im ? (im.getAttribute('style') || '') : '',
+    cap: cap ? cap.textContent : ''
+  };
+});
+ok('图片插入为 asset 引用（左侧不塞 base64）', imgRes.srcLine);
+ok('图片缩到 1080 宽', imgRes.assetW === 1080 && imgRes.assetH === 810,
+   imgRes.assetW + '×' + imgRes.assetH);
+ok('缩图后体积远小于原图', imgRes.assetKb > 0 && imgRes.assetKb < 200, imgRes.assetKb + 'KB');
+ok('逐图圆角 / 左对齐 / 阴影都写进了 style',
+   /border-radius:8px/.test(imgRes.style) && /margin:0 auto 0 0/.test(imgRes.style) &&
+   /box-shadow/.test(imgRes.style), imgRes.style);
+ok('图注渲染在图片下方', imgRes.cap === '压缩后的图', imgRes.cap);
+
+/* 换主题后三类内容都要还在 */
+await page.click('#btnTheme');
+await page.waitForTimeout(200);
+await page.evaluate(() => {
+  const items = [...document.querySelectorAll('.themepop .tp-item')];
+  const t = items.find(i => !i.classList.contains('on'));
+  if (t) t.click();
+});
+await page.waitForTimeout(600);
+const survive = await page.evaluate(() => ({
+  img: !!document.querySelector('#article img'),
+  table: !!document.querySelector('#article table'),
+  elem: /点击上方蓝字关注我/.test(document.querySelector('#article').innerHTML),
+  keepAsset: /asset:img1/.test(document.querySelector('#source').value)
+}));
+ok('换主题后图片 / 表格 / 元件都还在',
+   survive.img && survive.table && survive.elem && survive.keepAsset, JSON.stringify(survive));
+
+/* 导出的成品里，逐图样式不能被 normalizeForWechat 抹掉 */
+const expStyle = await page.evaluate(() => {
+  const tags = buildExportHtml(true).match(/<img[^>]*>/g) || [];
+  const styles = tags.map(t => (t.match(/style="([^"]*)"/) || [])[1] || '');
+  return { n: tags.length, last: styles[styles.length - 1] || '' };
+});
+ok('导出成品保留了图片圆角与阴影',
+   /border-radius:8px/.test(expStyle.last) && /box-shadow/.test(expStyle.last),
+   expStyle.n + ' 张图, 末张=' + expStyle.last);
+
+try { fs.unlinkSync(TMPIMG); } catch (e) {}
 
 const finalErrors = errors.length;
 ok('全流程无未捕获错误', finalErrors === 0, errors.join(' ;; '));
