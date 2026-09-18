@@ -140,8 +140,43 @@ html[data-app="dark"] .budget.over{background:#3a1a17;border-color:#6b2b24;color
 .tsep{width:1px;height:18px;background:var(--line);margin:0 5px;flex:0 0 auto;}
 .colorwrap{position:relative;display:inline-flex;align-items:center;justify-content:center;height:30px;width:34px;border-radius:7px;cursor:pointer;color:var(--text2);}
 .colorwrap:hover{background:var(--panel);color:var(--text);}
-.colorwrap input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:none;padding:0;}
 .colorwrap .bar{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:15px;height:3px;border-radius:2px;}
+/* 取色全部交给下面的自绘色板。页面里没有任何 input[type=color]：
+   该原生控件在各内核下的渲染差异极大（部分内核直接把调色板画成图片形状的
+   占位图标），我们无法控制它的外观，所以不复用它。 */
+
+/* 自绘色板 */
+.palette{
+  position:fixed;z-index:70;padding:9px;border-radius:10px;
+  background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 8px 14px rgba(16,24,40,.10), 0 18px 40px rgba(16,24,40,.18);
+  display:grid;grid-template-columns:repeat(6,20px);gap:6px;
+}
+.palette[hidden]{display:none;}
+.palette .sw{width:20px;height:20px;border-radius:5px;padding:0;border:1px solid rgba(0,0,0,.14);cursor:pointer;transition:transform .12s;}
+.palette .sw:hover{transform:scale(1.14);}
+.palette .sw.on{box-shadow:0 0 0 2px var(--brand);}
+.palette .hexrow{
+  grid-column:1 / -1;display:flex;align-items:center;gap:5px;height:26px;
+  padding:0 7px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);
+}
+.palette .hexrow span{font-size:12px;color:var(--text3);}
+.palette .hexrow input{
+  flex:1;min-width:0;border:0;background:none;outline:none;padding:0;
+  font:12px/1 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color:var(--text);letter-spacing:.4px;text-transform:uppercase;
+}
+.palette .hexrow input::placeholder{color:var(--text3);text-transform:none;letter-spacing:0;}
+.palette .hexrow.bad{border-color:#d9534f;}
+
+/* 样式面板里的「正文颜色」入口：用按钮自绘色块，替代原生取色控件 */
+.colbtn{
+  width:34px;height:26px;border:1px solid var(--line);border-radius:6px;
+  background:none;cursor:pointer;padding:0;flex:0 0 auto;
+  display:inline-flex;align-items:center;justify-content:center;
+}
+.colbtn:hover{border-color:var(--text3);}
+.colbtn i{display:block;width:22px;height:14px;border-radius:4px;}
 select.mini{padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:var(--panel);font-size:12px;height:30px;}
 
 /* 全局样式面板 */
@@ -273,8 +308,8 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
         <button class="tb u" data-act="underline" title="下划线 (Ctrl+U)">U</button>
         <button class="tb s" data-act="strikeThrough" title="删除线">S</button>
         <span class="tsep"></span>
-        <label class="colorwrap" title="字体颜色"><span>A</span><span class="bar" id="barFg" style="background:#9E2B25"></span><input type="color" id="pickFg" value="#9E2B25"></label>
-        <label class="colorwrap" title="背景高亮"><span style="background:linear-gradient(transparent 55%, #FFE08A 55%)">A</span><span class="bar" id="barBg" style="background:#FFE08A"></span><input type="color" id="pickBg" value="#FFE08A"></label>
+        <label class="colorwrap" id="fgBtn" title="字体颜色"><span>A</span><span class="bar" id="barFg" data-c="#9E2B25" style="background:#9E2B25"></span></label>
+        <label class="colorwrap" id="bgBtn" title="背景高亮"><span style="background:linear-gradient(transparent 55%, #FFE08A 55%)">A</span><span class="bar" id="barBg" data-c="#FFE08A" style="background:#FFE08A"></span></label>
         <span class="tsep"></span>
         <select class="mini" id="sizeSelect" title="选中文字字号">
           <option value="">字号</option>
@@ -314,7 +349,7 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
             <option value="'PingFang SC','Microsoft YaHei',sans-serif">苹方</option>
           </select>
         </div>
-        <div class="fld"><label>正文颜色</label><input type="color" id="gColor" value="#333333" style="width:34px;height:26px;border:1px solid var(--line);border-radius:6px;background:none;padding:0;cursor:pointer;">
+        <div class="fld"><label>正文颜色</label><button type="button" class="colbtn" id="gColorBtn" title="正文颜色"><i id="gColorChip" data-c="#333333" style="background:#333333"></i></button>
           <span class="switch"><input type="checkbox" id="useColor"> 启用</span>
         </div>
         <div class="fld"><label>缩进</label>
@@ -1267,14 +1302,103 @@ $('#sizeSelect').addEventListener('change', e=>{
   if(e.target.value) setSelectionFontSize(e.target.value);
   e.target.selectedIndex = 0;
 });
-$('#pickFg').addEventListener('input', e=>{
-  $('#barFg').style.background = e.target.value;
-  exec('foreColor', e.target.value);
+/* ---------- 取色：自绘色板 ----------
+   页面里完全不用原生 input[type=color]。它在各内核下的外观差异极大，部分内核
+   会把调色板直接画成「图片形状」的占位图标（表现为工具栏里出现裂图），而我们
+   无法对它做任何样式控制。取色因此全部由下面的自绘色板 + 十六进制输入框承担。 */
+const SWATCH = {
+  fg: ['#000000','#3D3428','#5C5C5C','#8C8C8C','#9E2B25','#C0392B',
+       '#D4741F','#B8860B','#4E7A3A','#1B6B50','#1F6FB2','#5B4B8A'],
+  bg: ['#FFF3B0','#FFE08A','#FFD6D6','#D8F0D8','#CFE8FF','#E5D9FF',
+       '#FFB3B3','#B7E4C7','#A7C7E7','#D9C7F0','#F0E4D4','#FFEDD5']
+};
+SWATCH.g = SWATCH.fg;
+
+const palette = document.createElement('div');
+palette.className = 'palette';
+palette.hidden = true;
+document.body.appendChild(palette);
+let paletteKind = 'fg';
+
+/* 取色目标：fg=选中文字颜色 / bg=选中文字高亮 / g=全局正文字色
+   只用页面内的自绘色块作为「当前色」的唯一载体，不依赖任何原生取色控件。 */
+function palTarget(kind){
+  if(kind === 'fg') return { chip:$('#barFg'), cmd:'foreColor' };
+  if(kind === 'bg') return { chip:$('#barBg'), cmd:'hiliteColor' };
+  return { chip:$('#gColorChip'), cmd:null };
+}
+
+function closePalette(){ palette.hidden = true; }
+function openPalette(kind, anchor){
+  paletteKind = kind;
+  const raw = palTarget(kind).chip.dataset.c || '';
+  const cur = raw.replace('#','');
+  palette.innerHTML = SWATCH[kind].map(c =>
+      '<button type="button" class="sw" data-c="' + c + '" style="background:' + c + '" title="' + c + '"></button>'
+    ).join('') +
+    '<div class="hexrow"><span>#</span><input type="text" class="hexinp" maxlength="7" ' +
+    'spellcheck="false" autocomplete="off" placeholder="自定义" value="' + cur + '"></div>';
+  const on = [...palette.querySelectorAll('.sw')]
+    .find(el => el.dataset.c.toUpperCase() === raw.toUpperCase());
+  if(on) on.classList.add('on');
+  palette.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const w = palette.offsetWidth, h = palette.offsetHeight;
+  const left = Math.max(8, Math.min(r.left, innerWidth - w - 8));
+  let top = r.bottom + 6;
+  if(top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  palette.style.left = left + 'px';
+  palette.style.top = top + 'px';
+}
+function applyColor(kind, c){
+  const t = palTarget(kind);
+  t.chip.dataset.c = c;
+  t.chip.style.background = c;
+  if(kind === 'g'){
+    state.g.color = c;
+    state.g.useColor = true;
+    $('#useColor').checked = true;
+    applyGlobal();
+    save();
+  }else{
+    exec(t.cmd, c);
+  }
+}
+palette.addEventListener('click', e=>{
+  const b = e.target.closest('button');
+  if(!b) return;
+  applyColor(paletteKind, b.dataset.c);
+  closePalette();
 });
-$('#pickBg').addEventListener('input', e=>{
-  $('#barBg').style.background = e.target.value;
-  exec('hiliteColor', e.target.value);
+/* 自定义色值：只在这里校验并标红，真正的上色交给 change，
+   否则 exec() 会在每次按键后把焦点从输入框抢到正文。 */
+function hexOf(inp){ return (inp.value || '').replace(/^#/,'').trim(); }
+palette.addEventListener('input', e=>{
+  const inp = e.target;
+  if(!inp.classList || !inp.classList.contains('hexinp')) return;
+  const v = hexOf(inp);
+  inp.parentElement.classList.toggle('bad', v.length > 0 && !/^[0-9a-fA-F]{6}$/.test(v));
 });
+palette.addEventListener('change', e=>{
+  const inp = e.target;
+  if(!inp.classList || !inp.classList.contains('hexinp')) return;
+  const v = hexOf(inp);
+  if(!/^[0-9a-fA-F]{6}$/.test(v)) return;
+  applyColor(paletteKind, '#' + v.toUpperCase());
+  closePalette();
+});
+document.addEventListener('click', e=>{
+  if(palette.hidden) return;
+  if(palette.contains(e.target) || (e.target.closest && e.target.closest('.colorwrap, #gColorBtn'))) return;
+  closePalette();
+});
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closePalette(); });
+window.addEventListener('resize', closePalette);
+window.addEventListener('scroll', closePalette, true);
+
+$('#fgBtn').addEventListener('click', e=>{ e.preventDefault(); openPalette('fg', e.currentTarget); });
+$('#bgBtn').addEventListener('click', e=>{ e.preventDefault(); openPalette('bg', e.currentTarget); });
+$('#gColorBtn').addEventListener('click', e=>{ e.preventDefault(); openPalette('g', e.currentTarget); });
 
 const imagePicker = document.createElement('input');
 imagePicker.type = 'file';
@@ -1346,6 +1470,8 @@ function syncGlobalFromTheme(reset){
   $('#gGap').value  = state.g.gap!=null  ? state.g.gap  : (c.gap!=null?c.gap:18);
   $('#gFamily').value = state.g.family || '';
   refreshLabels();
+  syncColorChips();
+  $('#useColor').checked = !!state.g.useColor;
 }
 function refreshLabels(){
   $('#vSize').textContent = (+$('#gSize').value).toFixed(1).replace('.0','');
@@ -1353,13 +1479,19 @@ function refreshLabels(){
   $('#vLs').textContent   = (+$('#gLs').value).toFixed(1);
   $('#vGap').textContent  = $('#gGap').value;
 }
+/* 正文颜色按钮的色块跟随 state.g.color */
+function syncColorChips(){
+  const c = state.g.color || '#333333';
+  const chip = $('#gColorChip');
+  chip.dataset.c = c;
+  chip.style.background = c;
+}
 
 $('#gSize').addEventListener('input', e=>{ state.g.size = +e.target.value; refreshLabels(); applyGlobal(); save(); });
 $('#gLh').addEventListener('input',   e=>{ state.g.lh   = +e.target.value; refreshLabels(); applyGlobal(); save(); });
 $('#gLs').addEventListener('input',   e=>{ state.g.ls   = +e.target.value; refreshLabels(); applyGlobal(); save(); });
 $('#gGap').addEventListener('input',  e=>{ state.g.gap  = +e.target.value; refreshLabels(); applyGlobal(); save(); });
 $('#gFamily').addEventListener('change', e=>{ state.g.family = e.target.value; applyGlobal(); save(); });
-$('#gColor').addEventListener('input', e=>{ state.g.color = e.target.value; state.g.useColor = true; $('#useColor').checked = true; applyGlobal(); save(); });
 $('#useColor').addEventListener('change', e=>{ state.g.useColor = e.target.checked; applyGlobal(); save(); });
 $('#gIndent').addEventListener('change', e=>{ state.g.indent = e.target.checked; applyGlobal(); save(); });
 $('#gFootnote').addEventListener('change', e=>{ state.footnote = e.target.checked; renderArticle(); save(); });
@@ -1626,7 +1758,7 @@ function init(){
     $('#gSlim').checked      = state.slim;
     $('#gIndent').checked    = !!state.g.indent;
     $('#useColor').checked   = !!state.g.useColor;
-    if(state.g.color) $('#gColor').value = state.g.color;
+    syncColorChips();
   }
 
   setAppTheme(state.appTheme);

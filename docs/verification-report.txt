@@ -52,10 +52,21 @@ PASS | 行距滑杆生效 | 30.4 -> 48.4
 PASS | 标题随正文等比缩放（层级不乱） | title fs=31.63
 PASS | 「恢复主题默认」可还原字号 | fs=16
 PASS | 选中文字可加粗 | strong=7 sel="正文第一"
+PASS | 页面不含原生取色控件（裂图来源已彻底移除） | input[type=color]=0
+PASS | 无加载失败的图片 | img=1 broken=0
+PASS | 工具栏不含图片 / 外链背景图 / 原生取色控件 | []
+PASS | 点「A」弹出取色板（12 色）且完整落在视口内 | {"hidden":false,"sw":12,"inView":true}
+PASS | 色板内含自定义色值输入框并回填当前色 | {"exists":true,"val":"9E2B25","w":122}
+PASS | 输入自定义色值后上色生效并收起 | {"bar":"#1B6B50","closed":true,"applied":true}
+PASS | 非法色值被拒且标记为错误态 | {"before":"#1B6B50","after":"#1B6B50","shown":"ZZZ","bad":true}
+PASS | 取色板选色落到选中文字并自动收起 | {"bar":"#1F6FB2","applied":true,"closed":true}
+PASS | 点「正文颜色」弹出取色板 | {"hidden":false,"sw":12}
+PASS | 正文字色选色生效（色块 / 启用勾选 / 正文颜色三方一致） | {"chip":"#1B6B50","useColor":true,"coloredCount":6,"coloredFirst":"rgb(27, 107, 80)"}
+PASS | 「恢复主题默认」后色块与勾选一起复位 | {"chip":"#333333","useColor":false}
 PASS | 插入分割线按钮可用 | hr/小节数=8
 PASS | 复制到剪贴板成功且含 text/html | {"ok":true,"types":["text/plain","text/html"]}
 PASS | 刷新后记忆黑夜主题 | dark
 PASS | 刷新后记住上次导入的文稿
 PASS | 全流程无未捕获错误
 
-合计：59 通过 / 0 失败
+合计：70 通过 / 0 失败
