@@ -95,6 +95,11 @@ PASS | 光标在文档中间时，插入落在光标处（不再一律追加到�
 PASS | 连着插第二个时接着第一个往后排，不都堆在文末 | i1=462 i2=471
 PASS | 没碰过左侧时，插入仍追加到文末 | {"len":924,"idx":925}
 PASS | 「插入」菜单提示了插入点由左侧光标决定 | 插到哪儿由左侧文稿的光标决定：先在左边点一下要插的位置，再回来点上面的按钮；没点
+PASS | 左栏状态条有「插入点」指示 | {"text":"插入点：文末","on":false}
+PASS | 光标移到文中后，指示变成「第 N 行」并点亮 | {"reset":"插入点：文末","after":"插入点：第 30 行","on":true,"mid":462}
+PASS | 载入示例后指示回到「文末」 | 插入点：文末
+PASS | 左栏拖到最窄时状态条仍单行、插入点不被截断 | {"paneW":280,"footH":35,"rows":1,"caretText":"插入点：第 30 行","caretClipped":false,"readShown":false,"docOverflowX":false}
+PASS | 左栏最窄时放不下的「阅读时长」整体让位，且不撑出横向滚动条 | {"paneW":280,"footH":35,"rows":1,"caretText":"插入点：第 30 行","caretClipped":false,"readShown":false,"docOverflowX":false}
 PASS | 全流程无未捕获错误
 
-合计：98 通过 / 0 失败
+合计：103 通过 / 0 失败

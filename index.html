@@ -89,10 +89,21 @@ html[data-app="dark"] .seg button.on{background:#343943;box-shadow:none;}
 }
 #source::placeholder{color:var(--text3);line-height:2;}
 .pane-foot{
-  flex:0 0 auto;display:flex;gap:14px;align-items:center;padding:9px 14px;
+  flex:0 0 auto;display:flex;flex-wrap:nowrap;gap:14px;align-items:center;padding:9px 14px;
   border-top:1px solid var(--line);font-size:12px;color:var(--text3);background:var(--panel2);
+  overflow:hidden;
 }
+/* 状态条里的文字一律不内部折行 —— 左栏被拖窄时宁可省略，也不要撑高这一条。
+   （曾经出现过：窄栏下 "24 段" 之类被压到折成两行，整条从 35px 涨到 51px） */
+.pane-foot > span{white-space:nowrap;flex:0 0 auto;}
 .pane-foot b{color:var(--text2);font-weight:600;}
+/* 阅读时长是最次要的信息，空间不够时优先让它让位 */
+.pane-foot #statRead{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+/* 插入点：工具栏「插入」里的三类内容会落到这里。
+   光标在文中时点亮成品牌色，在文末时保持灰色 —— 用户点一下左侧就能看到变化，
+   不用猜插入点在哪。 */
+.pane-foot .caret-stat{flex:0 0 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pane-foot .caret-stat.on{color:var(--brand);font-weight:600;}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--line);}
 
 /* ---------- 右栏 ---------- */
@@ -395,6 +406,7 @@ table.tbled td input:focus{box-shadow:inset 0 0 0 2px var(--brand);border-radius
       <span><b id="statPara">0</b> 段</span>
       <span class="spacer" style="flex:1"></span>
       <span id="statRead">约 0 分钟</span>
+      <span class="caret-stat" id="statCaret" title="工具栏「插入 ▾」里的图片 / 表格 / 装饰元件会插到这里。在左侧文稿里点一下要插的位置即可改变；点文稿下方的空白处会落到文末。">插入点：文末</span>
     </div>
   </section>
 
@@ -1838,8 +1850,45 @@ function rememberCaret(){
   if(!ta || ta.selectionStart == null) return;
   srcCaret = ta.selectionStart;
   srcCaretLen = ta.value.length;
+  paintCaretStat();
 }
-function resetCaret(){ srcCaret = null; srcCaretLen = -1; }
+function resetCaret(){ srcCaret = null; srcCaretLen = -1; paintCaretStat(); }
+
+/* 插入点所在行；光标贴在文末、或记录已失效时返回 null（当作「文末」） */
+function caretLine(){
+  const ta = $('#source');
+  if(srcCaret == null || srcCaretLen !== ta.value.length) return null;
+  if(srcCaret >= ta.value.length) return null;
+  return ta.value.slice(0, srcCaret).split('\n').length;
+}
+function paintCaretStat(){
+  const el = $('#statCaret');
+  if(!el) return;
+  const n = caretLine();
+  const txt = '插入点：' + (n ? ('第 ' + n + ' 行') : '文末');
+  if(el.textContent === txt) return;   /* 没变就不测量，免得每次敲字都触发重排 */
+  el.textContent = txt;
+  el.classList.toggle('on', !!n);
+  queueFitPaneFoot();
+}
+
+/* 状态条放不下时，让最次要的「阅读时长」整体让位 ——
+   这比把它截成「约 2 …」干净。只在分栏拖动 / 窗口变化 / 插入点文字变化时算，
+   不进常驻渲染路径。 */
+let fitPending = false;
+function queueFitPaneFoot(){
+  if(fitPending) return;
+  fitPending = true;
+  requestAnimationFrame(()=>{ fitPending = false; fitPaneFoot(); });
+}
+function fitPaneFoot(){
+  const read = $('#statRead');
+  if(!read) return;
+  read.style.display = '';           /* 先放回去再量，否则隐藏状态下永远「放得下」 */
+  /* 量「阅读时长」自己有没有被压扁：父容器是 overflow:hidden，
+     光看它的 scrollWidth 量不出来 —— 子元素被压扁时父容器的 scrollWidth 不变。 */
+  if(read.scrollWidth > read.clientWidth + 1) read.style.display = 'none';
+}
 
 function sourceInsert(text){
   const ta = $('#source');
@@ -1856,6 +1905,7 @@ function sourceInsert(text){
   const caret = (before + padL + text).length;
   srcCaret = caret;            /* 连着插几个时，接着往后排而不是都堆在文末 */
   srcCaretLen = next.length;
+  paintCaretStat();
   try{ ta.setSelectionRange(caret, caret); }catch(e){}
   renderArticle();
   save();
@@ -2713,10 +2763,13 @@ function init(){
     w = Math.max(280, Math.min(w, rect.width-460));
     document.querySelector('.pane-src').style.setProperty('--left-w', w+'px');
     document.querySelector('.pane-src').style.width = w+'px';
+    queueFitPaneFoot();          /* 左栏变窄时收掉状态条里放不下的「阅读时长」 */
   });
   const stop = ()=>{ dragging = false; document.body.style.cursor=''; };
   splitter.addEventListener('pointerup', stop);
   splitter.addEventListener('pointercancel', stop);
+  window.addEventListener('resize', queueFitPaneFoot);
+  queueFitPaneFoot();
 
   /* 快捷键 */
   document.addEventListener('keydown', e=>{

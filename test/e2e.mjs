@@ -854,6 +854,68 @@ const caretHint = await page.evaluate(() => {
 });
 ok('「插入」菜单提示了插入点由左侧光标决定', /光标/.test(caretHint), caretHint.trim().slice(0, 40));
 
+/* 插入点指示：左栏状态条上要能看见当前插入点，否则用户没法确认
+   （曾经有过「用户以为点了中间、其实点在文稿下方空白处，光标本来就在文末」的误解） */
+const statInit = await page.evaluate(() => {
+  const el = document.querySelector('#statCaret');
+  return el ? { text: el.textContent, on: el.classList.contains('on') } : null;
+});
+ok('左栏状态条有「插入点」指示', !!statInit, JSON.stringify(statInit));
+
+const statAfterClick = await page.evaluate(async () => {
+  const ta = document.querySelector('#source');
+  document.querySelector('#btnDemo').click();
+  await new Promise(r => setTimeout(r, 400));
+  const el = document.querySelector('#statCaret');
+  const reset = el.textContent;
+  const mid = Math.floor(ta.value.length / 2);
+  ta.focus();
+  ta.setSelectionRange(mid, mid);
+  await new Promise(r => setTimeout(r, 150));
+  return { reset, after: el.textContent, on: el.classList.contains('on'), mid };
+});
+ok('光标移到文中后，指示变成「第 N 行」并点亮',
+   /^插入点：第 \d+ 行$/.test(statAfterClick.after) && statAfterClick.on,
+   JSON.stringify(statAfterClick));
+ok('载入示例后指示回到「文末」', /文末$/.test(statAfterClick.reset), statAfterClick.reset);
+
+/* 左栏拖到最窄（280px）时状态条不能折行 / 变高 ——
+   「插入点」是往这条里加的第 4 项，很容易把它压垮 */
+const narrowFoot = await page.evaluate(async () => {
+  const ta = document.querySelector('#source');
+  const mid = Math.floor(ta.value.length / 2);
+  ta.focus();
+  ta.setSelectionRange(mid, mid);
+  await new Promise(r => setTimeout(r, 150));
+  const pane = document.querySelector('.pane-src');
+  const was = pane.style.width;
+  pane.style.width = '280px';
+  window.dispatchEvent(new Event('resize'));
+  await new Promise(r => setTimeout(r, 220));      /* 等 rAF 里的 fitPaneFoot */
+  const foot = document.querySelector('.pane-foot');
+  const caret = document.querySelector('#statCaret');
+  const tops = [...foot.children].filter(x => x.getBoundingClientRect().height > 0)
+    .map(x => Math.round(x.getBoundingClientRect().top));
+  const out = {
+    paneW: Math.round(pane.getBoundingClientRect().width),
+    footH: Math.round(foot.getBoundingClientRect().height),
+    rows: [...new Set(tops)].length,
+    caretText: caret.textContent,
+    caretClipped: caret.scrollWidth > caret.clientWidth + 1,
+    readShown: getComputedStyle(document.querySelector('#statRead')).display !== 'none',
+    docOverflowX: document.documentElement.scrollWidth > document.documentElement.clientWidth
+  };
+  pane.style.width = was;
+  window.dispatchEvent(new Event('resize'));
+  return out;
+});
+ok('左栏拖到最窄时状态条仍单行、插入点不被截断',
+   narrowFoot.footH === 35 && narrowFoot.rows === 1 && !narrowFoot.caretClipped &&
+   /^插入点：第 \d+ 行$/.test(narrowFoot.caretText),
+   JSON.stringify(narrowFoot));
+ok('左栏最窄时放不下的「阅读时长」整体让位，且不撑出横向滚动条',
+   !narrowFoot.readShown && !narrowFoot.docOverflowX, JSON.stringify(narrowFoot));
+
 try { fs.unlinkSync(TMPIMG); } catch (e) {}
 
 const finalErrors = errors.length;
