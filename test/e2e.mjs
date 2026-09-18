@@ -351,6 +351,160 @@ const boldCheck = await page.evaluate(() => {
 ok('选中文字可加粗', boldCheck.count > 0, `strong=${boldCheck.count} sel="${bolded.selected}"`);
 await page.screenshot({ path: path.join(ARTIFACTS, 'shot-3-bold.png') });
 
+/* ---------- 取色板 ----------
+   原生 input[type=color] 在部分浏览器内核下会把调色板画成「图片形状」的占位
+   图标（表现为工具栏里出现裂图），且各内核外观差异极大。因此应用彻底不使用
+   该控件，取色全部由自绘色板承担。本组断言守住这条底线。 */
+const swStruct = await page.evaluate(() => {
+  const imgs = [...document.querySelectorAll('img')];
+  /* 样本稿里那张 example.com/a.png 是故意 404 的占位图，不计入裂图 */
+  const broken = imgs.filter((el) => (!el.complete || el.naturalWidth === 0) && !/example\.com/.test(el.src));
+  return {
+    colorInputs: document.querySelectorAll('input[type=color]').length,
+    imgs: imgs.length,
+    broken: broken.length,
+  };
+});
+ok('页面不含原生取色控件（裂图来源已彻底移除）',
+  swStruct.colorInputs === 0,
+  'input[type=color]=' + swStruct.colorInputs);
+ok('无加载失败的图片', swStruct.broken === 0,
+  'img=' + swStruct.imgs + ' broken=' + swStruct.broken);
+
+/* 工具栏区域内不应存在任何非文字渲染元素（img / 背景图 / 原生控件） */
+const barForeign = await page.evaluate(() => {
+  const bar = document.querySelector('#rtToolbar');
+  const bad = [];
+  bar.querySelectorAll('*').forEach((el) => {
+    const cs = getComputedStyle(el);
+    if (el.tagName === 'IMG') bad.push({ tag: 'IMG', cls: el.className });
+    if (cs.backgroundImage && cs.backgroundImage !== 'none' && !/gradient/.test(cs.backgroundImage)) {
+      bad.push({ tag: el.tagName, cls: el.className, bg: cs.backgroundImage });
+    }
+    if (el.tagName === 'INPUT' && el.type === 'color') bad.push({ tag: 'INPUT[color]' });
+  });
+  return bad;
+});
+ok('工具栏不含图片 / 外链背景图 / 原生取色控件', barForeign.length === 0,
+  JSON.stringify(barForeign));
+
+await page.click('#fgBtn');
+await page.waitForTimeout(220);
+const swOpen = await page.evaluate(() => {
+  const el = document.querySelector('.palette');
+  const b = el.getBoundingClientRect();
+  return {
+    hidden: el.hidden,
+    sw: el.querySelectorAll('.sw').length,
+    inView: b.left >= 0 && b.top >= 0 && b.right <= innerWidth && b.bottom <= innerHeight,
+  };
+});
+ok('点「A」弹出取色板（12 色）且完整落在视口内',
+  !swOpen.hidden && swOpen.sw === 12 && swOpen.inView, JSON.stringify(swOpen));
+
+/* 自定义色值：色板里的十六进制输入框（替代原先的「更多颜色…」原生调色板） */
+await page.evaluate(() => { document.querySelector('.palette').hidden = true; });
+await page.click('#fgBtn');
+await page.waitForTimeout(200);
+const hexBox = await page.evaluate(() => {
+  const inp = document.querySelector('.palette .hexinp');
+  return inp ? { exists: true, val: inp.value, w: Math.round(inp.getBoundingClientRect().width) } : { exists: false };
+});
+ok('色板内含自定义色值输入框并回填当前色', hexBox.exists && hexBox.val === '9E2B25' && hexBox.w > 20,
+  JSON.stringify(hexBox));
+
+await page.fill('.palette .hexinp', '1B6B50');
+await page.dispatchEvent('.palette .hexinp', 'change');
+await page.waitForTimeout(300);
+const hexApplied = await page.evaluate(() => ({
+  bar: document.querySelector('#barFg').dataset.c,
+  closed: document.querySelector('.palette').hidden,
+  applied: /#1B6B50|rgb\(27,\s*107,\s*80\)/i.test(document.querySelector('#article').innerHTML),
+}));
+ok('输入自定义色值后上色生效并收起',
+  hexApplied.applied && hexApplied.bar === '#1B6B50' && hexApplied.closed, JSON.stringify(hexApplied));
+
+/* 非法色值不应上色 */
+await page.click('#fgBtn');
+await page.waitForTimeout(200);
+const hexBad = await page.evaluate(async () => {
+  const inp = document.querySelector('.palette .hexinp');
+  const before = document.querySelector('#barFg').dataset.c;
+  inp.value = 'ZZZ';
+  inp.dispatchEvent(new Event('input', { bubbles: true }));
+  inp.dispatchEvent(new Event('change', { bubbles: true }));
+  await new Promise((r) => setTimeout(r, 150));
+  return {
+    before,
+    after: document.querySelector('#barFg').dataset.c,
+    shown: inp.value,
+    bad: inp.parentElement.classList.contains('bad'),
+  };
+});
+ok('非法色值被拒且标记为错误态',
+  hexBad.after === hexBad.before && hexBad.shown === 'ZZZ' && hexBad.bad,
+  JSON.stringify(hexBad));
+await page.evaluate(() => { document.querySelector('.palette').hidden = true; });
+
+await page.evaluate(() => {
+  document.querySelector('.palette').hidden = true;
+  const a = document.querySelector('#article');
+  const P = a.querySelector('p');
+  const t = document.createTreeWalker(P, NodeFilter.SHOW_TEXT).nextNode();
+  const r = document.createRange();
+  r.setStart(t, 0);
+  r.setEnd(t, Math.min(4, t.textContent.length));
+  const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+  a.focus();
+});
+await page.click('#fgBtn');
+await page.waitForTimeout(180);
+await page.click('.palette .sw[data-c="#1F6FB2"]');
+await page.waitForTimeout(300);
+const swApplied = await page.evaluate(() => ({
+  bar: document.querySelector('#barFg').dataset.c,
+  applied: /#1F6FB2|rgb\(31,\s*111,\s*178\)/i.test(document.querySelector('#article').innerHTML),
+  closed: document.querySelector('.palette').hidden,
+}));
+ok('取色板选色落到选中文字并自动收起',
+  swApplied.applied && swApplied.bar === '#1F6FB2' && swApplied.closed, JSON.stringify(swApplied));
+
+/* 样式面板里的「正文颜色」也走同一个色板（前面步骤可能已把它展开，别盲点收起） */
+let swPanelOpen = await page.evaluate(() => !document.querySelector('.style-panel').hidden);
+if (!swPanelOpen) { await page.click('#btnStylePanel'); await page.waitForTimeout(250); }
+await page.click('#gColorBtn');
+await page.waitForTimeout(200);
+const swG = await page.evaluate(() => {
+  const el = document.querySelector('.palette');
+  return { hidden: el.hidden, sw: el.querySelectorAll('.sw').length };
+});
+ok('点「正文颜色」弹出取色板', !swG.hidden && swG.sw === 12, JSON.stringify(swG));
+await page.click('.palette .sw[data-c="#1B6B50"]');
+await page.waitForTimeout(320);
+const swGR = await page.evaluate(() => {
+  const chip = document.querySelector('#gColorChip');
+  const colored = [...document.querySelectorAll('#article [data-color]')];
+  return {
+    chip: chip.dataset.c,
+    useColor: document.querySelector('#useColor').checked,
+    coloredCount: colored.length,
+    coloredFirst: colored.length ? getComputedStyle(colored[0]).color : 'none',
+  };
+});
+ok('正文字色选色生效（色块 / 启用勾选 / 正文颜色三方一致）',
+  swGR.chip === '#1B6B50' && swGR.useColor && swGR.coloredCount > 0 &&
+  /27,\s*107,\s*80/.test(swGR.coloredFirst), JSON.stringify(swGR));
+await page.click('#btnResetStyle');
+await page.waitForTimeout(300);
+const swReset = await page.evaluate(() => ({
+  chip: document.querySelector('#gColorChip').dataset.c,
+  useColor: document.querySelector('#useColor').checked,
+}));
+ok('「恢复主题默认」后色块与勾选一起复位',
+  swReset.chip === '#333333' && swReset.useColor === false, JSON.stringify(swReset));
+swPanelOpen = await page.evaluate(() => !document.querySelector('.style-panel').hidden);
+if (swPanelOpen) { await page.click('#btnStylePanel'); await page.waitForTimeout(200); }
+
 /* ---------- 8. 分割线按钮 ---------- */
 const hrCount0 = await page.evaluate(() => document.querySelector('#article').innerHTML.split('◆').length);
 await page.evaluate(() => {
