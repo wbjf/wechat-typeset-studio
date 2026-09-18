@@ -52,7 +52,7 @@ PASS | 行距滑杆生效 | 30.4 -> 48.4
 PASS | 标题随正文等比缩放（层级不乱） | title fs=31.63
 PASS | 「恢复主题默认」可还原字号 | fs=16
 PASS | 选中文字可加粗 | strong=7 sel="正文第一"
-PASS | 插入分割线按钮可用 | hr/小节数=8（插入前符号数 6）
+PASS | 插入分割线按钮可用 | hr/小节数=8
 PASS | 复制到剪贴板成功且含 text/html | {"ok":true,"types":["text/plain","text/html"]}
 PASS | 刷新后记忆黑夜主题 | dark
 PASS | 刷新后记住上次导入的文稿

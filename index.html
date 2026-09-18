@@ -168,14 +168,6 @@ select.mini{padding:4px 6px;border-radius:7px;border:1px solid var(--line);backg
 }
 html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rgba(0,0,0,.5);border-color:#000;}
 .phone.wide{width:100%;max-width:760px;}
-.phone-bar{
-  height:34px;display:flex;align-items:center;justify-content:center;gap:6px;
-  background:#f6f7f9;border-bottom:1px solid #eceef1;font-size:11.5px;color:#9aa0aa;
-}
-html[data-app="dark"] .phone-bar{background:#2a2d34;border-bottom-color:#33363d;color:#7c828d;}
-.phone-bar .ttl{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.phone-bar .live{color:#07c160;}
-.phone.wide .phone-bar{border-radius:16px 16px 0 0;}
 #article{
   outline:none;min-height:280px;overflow-wrap:break-word;word-break:break-word;
   transition:box-shadow .15s;
@@ -347,7 +339,6 @@ html[data-app="dark"] .phone-bar{background:#2a2d34;border-bottom-color:#33363d;
     <div class="out-body">
       <div class="preview-wrap" id="previewWrap">
         <div class="phone" id="phone">
-          <div class="phone-bar"><span class="live">●</span><span class="ttl" id="phoneTitle">公众号正文预览</span><span>375px</span></div>
           <section id="article" contenteditable="true" spellcheck="false"></section>
         </div>
       </div>
@@ -902,7 +893,6 @@ function renderArticle(){
   article.setAttribute('style', css(S.root));
   applyGlobal();
   updateStats();
-  updatePhoneTitle(parsed.meta);
   scheduleBudget();
 }
 
@@ -1528,11 +1518,6 @@ function updateStats(){
   $('#statPara').textContent = paras;
   $('#statRead').textContent = '约 ' + Math.max(1, Math.round(chars/400)) + ' 分钟';
 }
-function updatePhoneTitle(meta){
-  const t = (meta && meta.title) || (state.source.match(/^#\s+(.+)$/m)||[,'公众号正文预览'])[1];
-  $('#phoneTitle').textContent = t.slice(0, 22);
-}
-
 /* ==========================================================
    10. 本地记忆
    ========================================================== */
