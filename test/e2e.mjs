@@ -852,7 +852,8 @@ const caretHint = await page.evaluate(() => {
   const p = [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'));
   return (p.querySelector('.pop-hint') || {}).textContent || '';
 });
-ok('「插入」菜单提示了插入点由左侧光标决定', /光标/.test(caretHint), caretHint.trim().slice(0, 40));
+ok('「插入」菜单写明了两条定插入点的途径（右侧点段 / 左侧点位置）',
+   /右侧/.test(caretHint) && /左侧/.test(caretHint), caretHint.trim().slice(0, 50));
 
 /* 插入点指示：左栏状态条上要能看见当前插入点，否则用户没法确认
    （曾经有过「用户以为点了中间、其实点在文稿下方空白处，光标本来就在文末」的误解） */
@@ -915,6 +916,78 @@ ok('左栏拖到最窄时状态条仍单行、插入点不被截断',
    JSON.stringify(narrowFoot));
 ok('左栏最窄时放不下的「阅读时长」整体让位，且不撑出横向滚动条',
    !narrowFoot.readShown && !narrowFoot.docOverflowX, JSON.stringify(narrowFoot));
+
+/* ---------- 12b. 在右侧预览里点位置 → 插到那一段之后 ----------
+   预览是成品视图，和文稿不是同一套字符，所以按**块**换算：
+   点到哪一块就插到那一块后面（块的源文区间由解析器给出）。 */
+await page.evaluate(() => document.querySelector('#btnDemo').click());
+await page.waitForTimeout(450);
+
+const blkMarks = await page.evaluate(() => {
+  const nodes = [...document.querySelectorAll('#article [data-off]')];
+  const arr = nodes.map(el => [+el.dataset.from, +el.dataset.off]);
+  const bad = arr.filter(([f, o]) => !(f < o)).length;
+  let mono = true;
+  for (let i = 1; i < arr.length; i++) if (arr[i][0] < arr[i - 1][1]) mono = false;
+  return { n: arr.length, bad, mono };
+});
+ok('渲染出的每块都带源文区间标记（非零长度、单调递增）',
+   blkMarks.n > 5 && blkMarks.bad === 0 && blkMarks.mono, JSON.stringify(blkMarks));
+
+const previewPick = await page.evaluate(async () => {
+  const el = [...document.querySelectorAll('#article [data-off]')][3];
+  const r = el.getBoundingClientRect();
+  el.dispatchEvent(new MouseEvent('click', {
+    bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2
+  }));
+  await new Promise(res => setTimeout(res, 250));
+  const ta = document.querySelector('#source');
+  return {
+    want: +el.dataset.off, got: srcCaret, len: ta.value.length, caretLen: srcCaretLen,
+    marked: [...document.querySelectorAll('#article .blk-target')].map(e => +e.dataset.off),
+    stat: document.querySelector('#statCaret').textContent
+  };
+});
+ok('在预览里点某一段 → 插入点换算成该段末尾',
+   previewPick.got === previewPick.want && previewPick.caretLen === previewPick.len,
+   JSON.stringify(previewPick));
+ok('被点的那一段在预览里被描边高亮',
+   previewPick.marked.length === 1 && previewPick.marked[0] === previewPick.want,
+   JSON.stringify(previewPick.marked));
+ok('状态条跟着显示「第 N 行」', /^插入点：第 \d+ 行$/.test(previewPick.stat), previewPick.stat);
+
+const previewInsertRes = await page.evaluate(async (off) => {
+  const v0 = document.querySelector('#source').value;
+  document.querySelector('[data-el="tip"]').click();
+  await new Promise(r => setTimeout(r, 350));
+  const v = document.querySelector('#source').value;
+  let d = 0;
+  while (d < v0.length && d < v.length && v0[d] === v[d]) d++;
+  return { diffAt: d, off, added: v.length - v0.length, tail: v.length - d };
+}, previewPick.want);
+ok('插入落在被点的那一段之后（不是文末）',
+   Math.abs(previewInsertRes.diffAt - previewInsertRes.off) <= 4 &&
+   previewInsertRes.tail > 60,
+   JSON.stringify(previewInsertRes));
+
+const marksLeak = await page.evaluate(() => {
+  const h = buildExportHtml(true);
+  return { off: /data-off/.test(h), from: /data-from/.test(h), cls: /blk-target/.test(h) };
+});
+ok('导出 HTML 已抹掉 data-off / data-from / blk-target',
+   !marksLeak.off && !marksLeak.from && !marksLeak.cls, JSON.stringify(marksLeak));
+
+const backToLeft = await page.evaluate(async () => {
+  const ta = document.querySelector('#source');
+  const mid = Math.floor(ta.value.length / 2);
+  ta.focus();
+  ta.setSelectionRange(mid, mid);
+  ta.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  await new Promise(r => setTimeout(r, 200));
+  return { marked: document.querySelectorAll('#article .blk-target').length, caret: srcCaret, mid };
+});
+ok('回到左栏后预览高亮取消、插入点改跟左栏光标',
+   backToLeft.marked === 0 && backToLeft.caret === backToLeft.mid, JSON.stringify(backToLeft));
 
 try { fs.unlinkSync(TMPIMG); } catch (e) {}
 

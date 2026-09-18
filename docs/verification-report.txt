@@ -1,5 +1,5 @@
 PASS | 页面无 JS 运行时错误
-PASS | 默认载入示例稿并渲染 | innerHTML=13894 p=27 section=12
+PASS | 默认载入示例稿并渲染 | innerHTML=14607 p=27 section=12
 PASS | 根容器带内联样式 | background-color:#FBF7EF;padding:26px 18px 32px;color:#3D342
 PASS | 主题弹层包含 10 个主题 | chips=10
 PASS | 默认主题为古风 | on=gu-feng
@@ -94,12 +94,19 @@ PASS | 导出成品里的样本图样式也没被破坏
 PASS | 光标在文档中间时，插入落在光标处（不再一律追加到文末） | {"mid":462,"i1":462,"i2":471,"d1":0,"d2":9}
 PASS | 连着插第二个时接着第一个往后排，不都堆在文末 | i1=462 i2=471
 PASS | 没碰过左侧时，插入仍追加到文末 | {"len":924,"idx":925}
-PASS | 「插入」菜单提示了插入点由左侧光标决定 | 插到哪儿由左侧文稿的光标决定：先在左边点一下要插的位置，再回来点上面的按钮；没点
+PASS | 「插入」菜单写明了两条定插入点的途径（右侧点段 / 左侧点位置） | 插到哪儿有两种定法：在右侧成品里点某一段，插到那一段后面（该段会描边高亮）；或在左侧文稿里点一个位置
 PASS | 左栏状态条有「插入点」指示 | {"text":"插入点：文末","on":false}
 PASS | 光标移到文中后，指示变成「第 N 行」并点亮 | {"reset":"插入点：文末","after":"插入点：第 30 行","on":true,"mid":462}
 PASS | 载入示例后指示回到「文末」 | 插入点：文末
 PASS | 左栏拖到最窄时状态条仍单行、插入点不被截断 | {"paneW":280,"footH":35,"rows":1,"caretText":"插入点：第 30 行","caretClipped":false,"readShown":false,"docOverflowX":false}
 PASS | 左栏最窄时放不下的「阅读时长」整体让位，且不撑出横向滚动条 | {"paneW":280,"footH":35,"rows":1,"caretText":"插入点：第 30 行","caretClipped":false,"readShown":false,"docOverflowX":false}
+PASS | 渲染出的每块都带源文区间标记（非零长度、单调递增） | {"n":23,"bad":0,"mono":true}
+PASS | 在预览里点某一段 → 插入点换算成该段末尾 | {"want":245,"got":245,"len":924,"caretLen":924,"marked":[245],"stat":"插入点：第 16 行"}
+PASS | 被点的那一段在预览里被描边高亮 | [245]
+PASS | 状态条跟着显示「第 N 行」 | 插入点：第 16 行
+PASS | 插入落在被点的那一段之后（不是文末） | {"diffAt":246,"off":245,"added":6,"tail":684}
+PASS | 导出 HTML 已抹掉 data-off / data-from / blk-target | {"off":false,"from":false,"cls":false}
+PASS | 回到左栏后预览高亮取消、插入点改跟左栏光标 | {"marked":0,"caret":465,"mid":465}
 PASS | 全流程无未捕获错误
 
-合计：103 通过 / 0 失败
+合计：110 通过 / 0 失败

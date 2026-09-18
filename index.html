@@ -104,6 +104,9 @@ html[data-app="dark"] .seg button.on{background:#343943;box-shadow:none;}
    不用猜插入点在哪。 */
 .pane-foot .caret-stat{flex:0 0 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pane-foot .caret-stat.on{color:var(--brand);font-weight:600;}
+/* 在右侧预览里点选插入点后，高亮那一块 —— 表示内容会插到它后面。
+   用 outline：不占布局（不会撑开预览），也不改变这一块本身的观感。 */
+#article .blk-target{outline:2px solid var(--brand);outline-offset:2px;}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--line);}
 
 /* ---------- 右栏 ---------- */
@@ -406,7 +409,7 @@ table.tbled td input:focus{box-shadow:inset 0 0 0 2px var(--brand);border-radius
       <span><b id="statPara">0</b> 段</span>
       <span class="spacer" style="flex:1"></span>
       <span id="statRead">约 0 分钟</span>
-      <span class="caret-stat" id="statCaret" title="工具栏「插入 ▾」里的图片 / 表格 / 装饰元件会插到这里。在左侧文稿里点一下要插的位置即可改变；点文稿下方的空白处会落到文末。">插入点：文末</span>
+      <span class="caret-stat" id="statCaret" title="工具栏「插入 ▾」里的图片 / 表格 / 装饰元件会插到这里。两种改法：在右侧成品里点某一段（插到那一段后面，该段会被描边高亮），或在左侧文稿里点一个位置。">插入点：文末</span>
     </div>
   </section>
 
@@ -963,11 +966,34 @@ function parseSource(src){
     body = body.slice(fm[0].length);
   }
 
+  /* 前面被切掉的 front-matter 长度：块的字符偏移要算在**原始文稿**上，
+     而 body 是切过头的，所以要把它加回去。 */
+  const fmLen = fm ? fm[0].length : 0;
+
   const lines = body.split('\n');
+  /* 每行在 body 里的起始偏移，用来把「行号」换成「字符偏移」 */
+  const lineOff = [];
+  {
+    let acc = 0;
+    for(const l of lines){ lineOff.push(acc); acc += l.length + 1; }
+  }
+
   const blocks = [];
   let i = 0;
+  let blkStart = 0;
+
+  /* 每个块都记下它在源文里的字符区间：
+       _from = 块首偏移（点预览里"这一块之前"用）
+       _to   = 块之后那一行的起始偏移，也就是「插到本块后面」该落的位置
+     这套区间是「在右侧预览里点某一段 → 插到那一段后面」的换算依据。 */
+  const pushBlock = (b)=>{
+    b._from = fmLen + lineOff[blkStart];
+    b._to   = fmLen + (i < lines.length ? lineOff[i] : body.length);
+    blocks.push(b);
+  };
 
   while(i < lines.length){
+    blkStart = i;
     const line = lines[i];
     if(!line.trim()){ i++; continue; }
 
@@ -978,62 +1004,66 @@ function parseSource(src){
       const buf = []; i++;
       while(i<lines.length && !RE_FENCE.test(lines[i])){ buf.push(lines[i]); i++; }
       i++;
-      blocks.push({type:'code', tag, lines:buf});
+      pushBlock({type:'code', tag, lines:buf});
       continue;
     }
-    /* 装饰元件（::follow / ::card / ::past / ::quote / ::tip） */
+    /* 注意：单行块要先 i++ 再 pushBlock ——
+       pushBlock 用当前的 i 算「块后位置」，先 push 会得到零长度区间。 */
     if(m = line.match(RE_ELEM)){
       if(ELEM_MAP[m[1]]){
-        blocks.push({type:'elem', elem:m[1], args:m[2].split('|').map(s=>s.trim())});
-        i++; continue;
+        i++;
+        pushBlock({type:'elem', elem:m[1], args:m[2].split('|').map(s=>s.trim())});
+        continue;
       }
     }
     /* 分割线 */
-    if(RE_HR.test(line)){ blocks.push({type:'hr'}); i++; continue; }
+    if(RE_HR.test(line)){ i++; pushBlock({type:'hr'}); continue; }
     /* 表格 */
     if(line.includes('|') && i+1<lines.length && RE_TSEP.test(lines[i+1]) && lines[i+1].includes('-')){
       const head = splitRow(line);
       i += 2;
       const rows = [];
       while(i<lines.length && lines[i].trim() && lines[i].includes('|')){ rows.push(splitRow(lines[i])); i++; }
-      blocks.push({type:'table', head, rows});
+      pushBlock({type:'table', head, rows});
       continue;
     }
     /* 标题 */
     if(m = line.match(RE_HEAD)){
-      blocks.push({type:'h'+Math.min(m[1].length,3), text:m[2].trim()});
-      i++; continue;
+      i++;
+      pushBlock({type:'h'+Math.min(m[1].length,3), text:m[2].trim()});
+      continue;
     }
     /* 引用 */
     if(RE_QUOTE.test(line)){
       const buf = [];
       while(i<lines.length && RE_QUOTE.test(lines[i])){ buf.push(lines[i].match(RE_QUOTE)[1]); i++; }
-      blocks.push({type:'quote', text:buf.join('\n')});
+      pushBlock({type:'quote', text:buf.join('\n')});
       continue;
     }
     /* 无序列表 */
     if(m = line.match(RE_UL)){
       const items = [];
       while(i<lines.length && RE_UL.test(lines[i])){ items.push(lines[i].match(RE_UL)[2]); i++; }
-      blocks.push({type:'ul', items});
+      pushBlock({type:'ul', items});
       continue;
     }
     /* 有序列表 */
     if(m = line.match(RE_OL)){
       const items = [];
       while(i<lines.length && RE_OL.test(lines[i])){ items.push(lines[i].match(RE_OL)[2]); i++; }
-      blocks.push({type:'ol', items});
+      pushBlock({type:'ol', items});
       continue;
     }
     /* 独占一行图片 */
     if(m = line.match(RE_IMG)){
-      blocks.push({type:'img', alt:m[1], src:m[2]});
-      i++; continue;
+      i++;
+      pushBlock({type:'img', alt:m[1], src:m[2]});
+      continue;
     }
     /* 段落 */
     const buf = [line.trim()]; i++;
     while(i<lines.length && !isBlockStart(lines[i]) && !RE_IMG.test(lines[i])){ buf.push(lines[i].trim()); i++; }
-    blocks.push({type:'p', text:buf.join(' ')});
+    pushBlock({type:'p', text:buf.join(' ')});
   }
   return {meta, blocks};
 }
@@ -1078,6 +1108,15 @@ function getTheme(id){
   return allThemes().find(t=>t.id===id) || THEME_LIST[0];
 }
 
+/* 把块的源文区间写到渲染出来的节点上：
+   data-from = 块首偏移，data-off = 块后位置。
+   右侧预览点击时靠它反查「该插到文稿的哪里」。只在预览里用，
+   导出前由 stripEditMarks() 抹掉，不会跑到公众号里。 */
+function markBlk(html, b){
+  return html.replace(/^<([a-zA-Z][\w-]*)/,
+    '<$1 data-from="'+b._from+'" data-off="'+b._to+'"');
+}
+
 function renderArticle(){
   const T = state.theme;
   const S = T.styles;
@@ -1108,6 +1147,7 @@ function renderArticle(){
 
   /* 正文 */
   for(const b of blocks){
+    const partFrom = parts.length;
     switch(b.type){
       case 'h1':
         parts.push('<p '+st(S.title)+'>'+inline(b.text, ctx)+'</p>');
@@ -1181,6 +1221,8 @@ function renderArticle(){
         break;
       }
     }
+    /* 本块产出的第一个节点带上源文区间标记（后面几个是它的内部结构，不用重复标） */
+    if(parts.length > partFrom) parts[partFrom] = markBlk(parts[partFrom], b);
   }
 
   /* 参考资料 */
@@ -1194,6 +1236,7 @@ function renderArticle(){
   article.innerHTML = parts.join('\n');
   article.setAttribute('style', css(S.root));
   applyGlobal();
+  paintPreviewMarker();   /* 重绘会把上一条插入点标记冲掉，这里补回来 */
   updateStats();
   scheduleBudget();
 }
@@ -1324,11 +1367,22 @@ function cleanAttrs(el){
   }
 }
 
+/* 预览里为了「点一段定位插入点」加的标记，不能进成品：
+   data-from / data-off 会在字符预算里白算长度，也会跟着 HTML 一起粘到公众号。 */
+function stripEditMarks(root){
+  root.querySelectorAll('[data-from],[data-off],.blk-target').forEach(el=>{
+    el.removeAttribute('data-from');
+    el.removeAttribute('data-off');
+    el.classList.remove('blk-target');
+  });
+}
+
 function buildExportHtml(slim){
   const useSlim = (slim === undefined) ? state.slim : slim;
   const clone = article.cloneNode(true);
   clone.removeAttribute('contenteditable');
   clone.removeAttribute('spellcheck');
+  stripEditMarks(clone);
   normalizeForWechat(clone);
   if(useSlim) slimStyles(clone);
   return clone.outerHTML;
@@ -1844,15 +1898,68 @@ function bindPopDismiss(pop, anchors){
    避免把内容插进一段和用户看到的不一样的文字里。 */
 let srcCaret = null;
 let srcCaretLen = -1;
+/* 插入点是从右侧预览点出来的吗？是的话在预览里高亮那一块，
+   让「会插到哪儿」看得见 —— 左栏光标和预览点选是两套入口，得区分显示。 */
+let previewInsert = false;
 
 function rememberCaret(){
   const ta = $('#source');
   if(!ta || ta.selectionStart == null) return;
   srcCaret = ta.selectionStart;
   srcCaretLen = ta.value.length;
+  if(previewInsert){ previewInsert = false; paintPreviewMarker(); }
   paintCaretStat();
 }
-function resetCaret(){ srcCaret = null; srcCaretLen = -1; paintCaretStat(); }
+function resetCaret(){
+  srcCaret = null; srcCaretLen = -1;
+  if(previewInsert){ previewInsert = false; paintPreviewMarker(); }
+  paintCaretStat();
+}
+
+/* ----------------------------------------------------------
+   在右侧预览里点选插入点。
+
+   预览是成品视图，和文稿不是同一套字符 —— 段落里的 markdown 记号
+   已经被渲染掉了，所以没法精确到「第几个字」。这里按**块**换算：
+   点到哪一块，就插到那一块的后面。块的源文区间由解析器给出
+   （见 parseSource 的 _from / _to），渲染时写进 data-from / data-off。
+
+   这样「点右侧某段 → 插入到那一段之后」就成立了，而不是永远插到文末。
+   ---------------------------------------------------------- */
+function previewOffsetAt(clientY){
+  const ta = $('#source');
+  const nodes = [...article.querySelectorAll('[data-off]')];
+  if(!nodes.length) return ta.value.length;      /* 空文稿：只能追加 */
+  let hit = null;
+  for(const el of nodes){
+    if(clientY < el.getBoundingClientRect().top){ break; }
+    hit = el;
+  }
+  /* 点在正文最上面（标题 / 导语）之前 → 插到第一块之前 */
+  if(!hit) return +nodes[0].dataset.from;
+  return +hit.dataset.off;
+}
+function setInsertFromPreview(off){
+  const ta = $('#source');
+  srcCaret = Math.max(0, Math.min(off, ta.value.length));
+  srcCaretLen = ta.value.length;
+  previewInsert = true;
+  paintCaretStat();
+  paintPreviewMarker();
+}
+function paintPreviewMarker(){
+  article.querySelectorAll('.blk-target').forEach(el=>el.classList.remove('blk-target'));
+  if(!previewInsert || srcCaret == null) return;
+  const el = [...article.querySelectorAll('[data-off]')].find(e=>+e.dataset.off === srcCaret);
+  if(el) el.classList.add('blk-target');
+}
+
+/* 点右侧预览 → 把该块的位置定成插入点。
+   注意这不会阻止预览自身的编辑：预览仍可点进去改字。 */
+article.addEventListener('click', e=>{
+  if(e.target.closest && e.target.closest('a')) return;   /* 点链接是跳转，不是定位 */
+  setInsertFromPreview(previewOffsetAt(e.clientY));
+});
 
 /* 插入点所在行；光标贴在文末、或记录已失效时返回 null（当作「文末」） */
 function caretLine(){
@@ -1908,10 +2015,28 @@ function sourceInsert(text){
   paintCaretStat();
   try{ ta.setSelectionRange(caret, caret); }catch(e){}
   renderArticle();
+  /* 从预览点选的情形，插入后把插入点吸附到「刚插进去那一块的后面」：
+     不然连着插两个会按字符位置落进同一段里，而不是依次往后排。 */
+  if(previewInsert) snapPreviewCaret();
   save();
   /* 回一个位置描述，让调用方能明确告诉用户「插到哪儿了」——
      插入点不写出来的话，用户只能靠猜。 */
   return { line: (before + padL).split('\n').length, atEnd: !usable };
+}
+
+/* 把插入点吸附到包含它的那一块的末尾（也就是「插到本块后面」的位置） */
+function snapPreviewCaret(){
+  const ta = $('#source');
+  const nodes = [...article.querySelectorAll('[data-off]')];
+  let hit = null;
+  for(const el of nodes){
+    if(+el.dataset.from <= srcCaret) hit = el; else break;
+  }
+  if(!hit) return;
+  srcCaret = +hit.dataset.off;
+  srcCaretLen = ta.value.length;
+  paintCaretStat();
+  paintPreviewMarker();
 }
 
 /* 「第 12 行」/「文末」 */
@@ -1930,7 +2055,7 @@ insertPop.innerHTML =
     '<button type="button" class="el-item" data-ins="table"><b>表格</b><i>可视化编辑行列</i></button>'+
     '<button type="button" class="el-item" data-ins="elem"><b>装饰元件</b><i>关注卡、名片、往期回顾</i></button>'+
   '</div>'+
-  '<p class="pop-hint">插到哪儿由<b>左侧文稿的光标</b>决定：先在左边点一下要插的位置，再回来点上面的按钮；没点过就追加到文末。</p>';
+  '<p class="pop-hint">插到哪儿有两种定法：在<b>右侧成品里点某一段</b>，插到那一段后面（该段会描边高亮）；或在<b>左侧文稿里点一个位置</b>。都没点过就追加到文末。</p>';
 document.body.appendChild(insertPop);
 bindPopDismiss(insertPop, ['#btnInsert']);
 insertPop.addEventListener('click', e=>{
