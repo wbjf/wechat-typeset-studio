@@ -108,30 +108,71 @@ let r = await page.evaluate(() => {
     ps: a.querySelectorAll('p').length,
     rootStyle: a.getAttribute('style') || '',
     rootBg: getComputedStyle(a).backgroundColor,
-    chips: document.querySelectorAll('#themeStrip .tchip').length,
-    onChip: document.querySelector('#themeStrip .tchip.on')?.dataset.id,
+    chips: document.querySelectorAll('.themepop .tp-item').length,
+    onChip: document.querySelector('.themepop .tp-item.on')?.dataset.id,
     srcLen: document.querySelector('#source').value.length,
     overflow: a.scrollWidth - a.clientWidth
   };
 });
 ok('默认载入示例稿并渲染', r.html > 500 && r.ps > 5, `innerHTML=${r.html} p=${r.ps} section=${r.sections}`);
 ok('根容器带内联样式', /background-color/.test(r.rootStyle), r.rootStyle.slice(0, 60));
-ok('主题条渲染 10 个主题', r.chips === 10, 'chips=' + r.chips);
+ok('主题弹层包含 10 个主题', r.chips === 10, 'chips=' + r.chips);
 ok('默认主题为古风', r.onChip === 'gu-feng', 'on=' + r.onChip);
 ok('正文不横向溢出手机宽度', r.overflow <= 1, 'overflow=' + r.overflow);
 
-/* ---------- 1b. 主题条不被裁切 + 字符预算 ---------- */
-const strip = await page.evaluate(() => {
-  const wrap = document.querySelector('#themeStrip');
-  const box = wrap.getBoundingClientRect();
-  const chips = [...wrap.querySelectorAll('.tchip')];
-  const visible = chips.filter(c => {
-    const r = c.getBoundingClientRect();
-    return r.right <= box.right + 1 && r.left >= box.left - 1 && r.width > 0;
-  }).length;
-  return { visible, total: chips.length, clipped: wrap.scrollHeight > wrap.clientHeight + 1 };
+/* ---------- 1b. 右栏高度分配 + 主题弹层 ----------
+   10 个主题原本常驻铺开，窄一点的窗口要占两行、把预览区压得很扁，
+   现在改成工具条按钮 + 按需展开的弹层，并顺带压缩了工具条。 */
+const layout = await page.evaluate(() => {
+  const h = (s) => { const e = document.querySelector(s); return e ? Math.round(e.getBoundingClientRect().height) : -1; };
+  const pane = h('.pane-out'), card = h('.out-card'), preview = h('#previewWrap');
+  return {
+    themeStripGone: document.querySelector('#themeStrip') === null,
+    popHidden: document.querySelector('.themepop').hidden,
+    card, preview, pane,
+    ratio: pane > 0 ? preview / pane : 0,
+    btnName: document.querySelector('#btnThemeName').textContent,
+    foot: document.querySelector('#footTheme').textContent
+  };
 });
-ok('10 个主题全部可见（不被横向裁切）', strip.visible === strip.total && !strip.clipped, JSON.stringify(strip));
+ok('主题条已从常驻布局中移除、主题弹层默认收起',
+  layout.themeStripGone && layout.popHidden, JSON.stringify(layout));
+ok('工具区（主题按钮 + 工具条，样式面板已收起）高度 ≤ 100px',
+  layout.card > 0 && layout.card <= 100, 'out-card=' + layout.card + 'px');
+ok('预览区占右栏高度 ≥ 83%', layout.ratio >= 0.83, (layout.ratio * 100).toFixed(1) + '%');
+ok('主题按钮与底部状态条都显示当前主题',
+  layout.btnName === '古风宣纸' && layout.foot === '古风宣纸',
+  'btn=' + layout.btnName + ' foot=' + layout.foot);
+
+await page.click('#btnTheme');
+await page.waitForTimeout(260);
+const pop = await page.evaluate(() => {
+  const el = document.querySelector('.themepop');
+  const box = el.getBoundingClientRect();
+  const items = [...el.querySelectorAll('.tp-item')];
+  const visible = items.filter((i) => {
+    const r = i.getBoundingClientRect();
+    return r.width > 0 && r.left >= box.left - 1 && r.right <= box.right + 1;
+  }).length;
+  return {
+    hidden: el.hidden, items: items.length, visible,
+    inView: box.left >= 0 && box.top >= 0 && box.right <= innerWidth + 1 && box.bottom <= innerHeight + 1,
+    noScroll: el.scrollWidth <= el.clientWidth + 1 && el.scrollHeight <= el.clientHeight + 1,
+    nameClipped: items.filter((i) => { const n = i.querySelector('.tp-nm'); return n.scrollWidth > n.clientWidth + 1; }).length
+  };
+});
+ok('点主题按钮展开弹层：10 项全部可见、主题名未被省略、无滚动条',
+  !pop.hidden && pop.items === 10 && pop.visible === 10 && pop.noScroll && pop.nameClipped === 0,
+  JSON.stringify(pop));
+ok('主题弹层完整落在视口内', pop.inView, JSON.stringify(pop));
+const cardWhileOpen = await page.evaluate(() => Math.round(document.querySelector('.out-card').getBoundingClientRect().height));
+ok('主题弹层是浮层：展开时工具区高度不变', Math.abs(cardWhileOpen - layout.card) <= 1,
+  'before=' + layout.card + ' whileOpen=' + cardWhileOpen);
+
+await page.keyboard.press('Escape');
+await page.waitForTimeout(200);
+const popEsc = await page.evaluate(() => document.querySelector('.themepop').hidden);
+ok('Esc 可关闭主题弹层', popEsc === true, 'hidden=' + popEsc);
 
 await page.waitForTimeout(700);
 const bud = await page.evaluate(() => document.querySelector('#charBudget').textContent);
@@ -251,12 +292,14 @@ ok('瘦身开关状态反映到提示中', slimOff.off, slimOff.t);
 
 /* ---------- 4. 主题切换 ---------- */
 const themeProbe = async (id) => {
-  await page.click(`.tchip[data-id="${id}"]`);
-  await page.waitForTimeout(350);
+  await page.click('#btnTheme');
+  await page.waitForTimeout(180);
+  await page.click(`.tp-item[data-id="${id}"]`);
+  await page.waitForTimeout(320);
   return page.evaluate(() => {
     const a = document.querySelector('#article');
     return {
-      on: document.querySelector('#themeStrip .tchip.on')?.dataset.id,
+      on: document.querySelector('.themepop .tp-item.on')?.dataset.id,
       bg: getComputedStyle(a).backgroundColor,
       color: getComputedStyle(a).color,
       font: getComputedStyle(a).fontFamily
@@ -536,7 +579,7 @@ await page.reload({ waitUntil: 'load' });
 await page.waitForTimeout(600);
 const persisted = await page.evaluate(() => ({
   app: document.documentElement.getAttribute('data-app'),
-  theme: document.querySelector('#themeStrip .tchip.on')?.dataset.id,
+  theme: document.querySelector('.themepop .tp-item.on')?.dataset.id,
   srcHasTest: document.querySelector('#source').value.includes('全要素渲染测试')
 }));
 ok('刷新后记忆黑夜主题', persisted.app === 'dark', persisted.app);

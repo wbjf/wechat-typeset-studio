@@ -1,10 +1,17 @@
 PASS | 页面无 JS 运行时错误
 PASS | 默认载入示例稿并渲染 | innerHTML=13894 p=27 section=12
 PASS | 根容器带内联样式 | background-color:#FBF7EF;padding:26px 18px 32px;color:#3D342
-PASS | 主题条渲染 10 个主题 | chips=10
+PASS | 主题弹层包含 10 个主题 | chips=10
 PASS | 默认主题为古风 | on=gu-feng
 PASS | 正文不横向溢出手机宽度 | overflow=0
-PASS | 10 个主题全部可见（不被横向裁切） | {"visible":10,"total":10,"clipped":false}
+PASS | 主题条已从常驻布局中移除、主题弹层默认收起 | {"themeStripGone":true,"popHidden":true,"card":38,"preview":790,"pane":860,"ratio":0.9186046511627907,"btnName":"古风宣纸","foot":"古风宣纸"}
+PASS | 工具区（主题按钮 + 工具条，样式面板已收起）高度 ≤ 100px | out-card=38px
+PASS | 预览区占右栏高度 ≥ 83% | 91.9%
+PASS | 主题按钮与底部状态条都显示当前主题 | btn=古风宣纸 foot=古风宣纸
+PASS | 点主题按钮展开弹层：10 项全部可见、主题名未被省略、无滚动条 | {"hidden":false,"items":10,"visible":10,"inView":true,"noScroll":true,"nameClipped":0}
+PASS | 主题弹层完整落在视口内 | {"hidden":false,"items":10,"visible":10,"inView":true,"noScroll":true,"nameClipped":0}
+PASS | 主题弹层是浮层：展开时工具区高度不变 | before=38 whileOpen=38
+PASS | Esc 可关闭主题弹层 | hidden=true
 PASS | 字符预算指示器工作 | 10,197 / 20,000 字符
 PASS | 样式面板首次访问默认收起（[hidden] 未被 display 覆盖） | {"hiddenAttr":true,"display":"none"}
 PASS | 二级标题套用主题装饰 | margin:44px 0 20px;padding-bottom:9px;border-bottom:1px solid #E4D9C3
@@ -69,4 +76,4 @@ PASS | 刷新后记忆黑夜主题 | dark
 PASS | 刷新后记住上次导入的文稿
 PASS | 全流程无未捕获错误
 
-合计：70 通过 / 0 失败
+合计：77 通过 / 0 失败

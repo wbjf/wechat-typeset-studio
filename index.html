@@ -96,38 +96,54 @@ html[data-app="dark"] .seg button.on{background:#343943;box-shadow:none;}
 .dot{width:5px;height:5px;border-radius:50%;background:var(--line);}
 
 /* ---------- 右栏 ---------- */
-.pane-out{display:flex;flex-direction:column;gap:10px;min-height:0;}
+.pane-out{display:flex;flex-direction:column;gap:8px;min-height:0;}
 .out-card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;flex:0 0 auto;}
 .out-body{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
 
-/* 主题条 */
-.theme-strip{display:flex;flex-wrap:wrap;gap:8px;padding:11px 14px;}
-.tchip{
-  flex:1 1 104px;max-width:168px;border:1px solid var(--line);border-radius:10px;padding:7px 11px 8px;
-  background:var(--panel2);text-align:left;transition:.15s;
+/* 主题选择：工具条上的按钮 + 弹出面板。
+   10 个主题若常驻铺开要占两行高度，把预览区挤得很小，所以改成按需展开。 */
+.tb.tbtn{gap:5px;padding:0 6px;max-width:170px;}
+.tb.tbtn .tdots{display:inline-flex;gap:2px;flex:0 0 auto;}
+.tb.tbtn .tdots i{width:6px;height:8px;border-radius:2px;display:block;}
+.tb.tbtn .tname{
+  font-size:12.5px;font-weight:600;color:var(--text);
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.tchip:hover{border-color:var(--text3);}
-.tchip.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand);}
-html[data-app="dark"] .tchip.on{background:#12291d;}
-.tchip .nm{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;}
-.tchip .ds{font-size:10.5px;color:var(--text3);margin-top:2px;white-space:nowrap;}
-.tchip .sw{display:flex;gap:3px;margin-top:6px;}
-.tchip .sw i{width:14px;height:8px;border-radius:3px;display:block;border:1px solid rgba(0,0,0,.06);}
+.themepop{
+  position:fixed;z-index:66;padding:10px;border-radius:12px;
+  width:398px;max-width:calc(100vw - 20px);
+  background:var(--panel);border:1px solid var(--line);
+  box-shadow:0 8px 14px rgba(16,24,40,.10), 0 20px 44px rgba(16,24,40,.20);
+  display:grid;grid-template-columns:repeat(5,1fr);gap:7px;
+}
+.themepop[hidden]{display:none;}
+html[data-app="dark"] .themepop{box-shadow:0 8px 14px rgba(0,0,0,.5), 0 20px 44px rgba(0,0,0,.6);}
+.tp-item{
+  display:flex;flex-direction:column;gap:6px;min-width:0;padding:7px 8px 8px;
+  border:1px solid var(--line);border-radius:9px;background:var(--panel2);
+  cursor:pointer;transition:.14s;text-align:left;
+}
+.tp-item:hover{border-color:var(--text3);}
+.tp-item.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand);}
+html[data-app="dark"] .tp-item.on{background:#12291d;}
+.tp-dots{display:flex;gap:3px;}
+.tp-dots i{flex:1;height:9px;border-radius:3px;display:block;border:1px solid rgba(0,0,0,.06);}
+.tp-nm{font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
 /* 富文本工具条 */
 .toolbar{
-  display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:8px 12px;
+  display:flex;align-items:center;gap:1px;flex-wrap:wrap;padding:5px 6px;
   border-top:1px solid var(--line);background:var(--panel2);
 }
 .pane-out .toolbar{border-top:none;}
 .tb{
-  min-width:30px;height:30px;padding:0 8px;border-radius:7px;font-size:13px;color:var(--text2);
+  min-width:26px;height:28px;padding:0 5px;border-radius:7px;font-size:12.5px;color:var(--text2);
   display:inline-flex;align-items:center;justify-content:center;transition:.12s;border:1px solid transparent;
 }
 .tb:hover{background:var(--panel);color:var(--text);border-color:var(--line);}
 .tb:active{transform:scale(.96);}
 .tb.b{font-weight:800;} .tb.i{font-style:italic;} .tb.u{text-decoration:underline;} .tb.s{text-decoration:line-through;}
-.tb.wide{padding:0 10px;font-size:12.5px;}
+.tb.wide{padding:0 5px;font-size:12px;}
 .tb.sel{background:var(--panel);border-color:var(--line);color:var(--text);}
 .budget{
   font-size:11.5px;color:var(--text3);padding:3px 9px;border-radius:20px;
@@ -137,8 +153,8 @@ html[data-app="dark"] .tchip.on{background:#12291d;}
 html[data-app="dark"] .budget.warn{background:#33270f;border-color:#5c451a;color:#e8b464;}
 .budget.over{color:#c0392b;border-color:#f0b5ae;background:#fdf0ee;}
 html[data-app="dark"] .budget.over{background:#3a1a17;border-color:#6b2b24;color:#f0857a;}
-.tsep{width:1px;height:18px;background:var(--line);margin:0 5px;flex:0 0 auto;}
-.colorwrap{position:relative;display:inline-flex;align-items:center;justify-content:center;height:30px;width:34px;border-radius:7px;cursor:pointer;color:var(--text2);}
+.tsep{width:1px;height:17px;background:var(--line);margin:0 1px;flex:0 0 auto;}
+.colorwrap{position:relative;display:inline-flex;align-items:center;justify-content:center;height:28px;width:32px;border-radius:7px;cursor:pointer;color:var(--text2);}
 .colorwrap:hover{background:var(--panel);color:var(--text);}
 .colorwrap .bar{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:15px;height:3px;border-radius:2px;}
 /* 取色全部交给下面的自绘色板。页面里没有任何 input[type=color]：
@@ -177,7 +193,7 @@ html[data-app="dark"] .budget.over{background:#3a1a17;border-color:#6b2b24;color
 }
 .colbtn:hover{border-color:var(--text3);}
 .colbtn i{display:block;width:22px;height:14px;border-radius:4px;}
-select.mini{padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:var(--panel);font-size:12px;height:30px;}
+select.mini{padding:3px 4px;border-radius:7px;border:1px solid var(--line);background:var(--panel);font-size:12px;height:28px;}
 
 /* 全局样式面板 */
 .style-panel{
@@ -193,8 +209,18 @@ select.mini{padding:4px 6px;border-radius:7px;border:1px solid var(--line);backg
 .switch{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;}
 .switch input{accent-color:var(--brand);width:15px;height:15px;}
 
+/* 右栏底部状态条：当前主题 + 字符预算。放在这里而不是工具条里，
+   免得工具条因为塞不下而多折一行。 */
+.out-foot{
+  flex:0 0 auto;display:flex;align-items:center;gap:7px;
+  padding:2px 12px;border-top:1px solid var(--line);background:var(--panel2);
+  font-size:11.5px;color:var(--text3);
+}
+.out-foot b{font-weight:600;color:var(--text2);}
+.out-foot .budget{padding:1px 8px;font-size:11px;}
+
 /* 预览区 */
-.preview-wrap{flex:1;min-height:0;overflow:auto;padding:22px 16px 44px;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;}
+.preview-wrap{flex:1;min-height:0;overflow:auto;padding:14px 14px 30px;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;}
 .phone{
   width:375px;flex:0 0 auto;background:#fff;border-radius:16px;
   box-shadow:0 2px 6px rgba(16,24,40,.06), 0 18px 48px rgba(16,24,40,.14);
@@ -291,9 +317,11 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
   <!-- 排版结果 -->
   <section class="pane pane-out">
     <div class="out-card">
-      <div class="theme-strip" id="themeStrip"></div>
-
       <div class="toolbar" id="rtToolbar">
+        <button class="tb tbtn" id="btnTheme" title="选择排版主题">
+          <span class="tdots" id="btnThemeDots"></span><span class="tname" id="btnThemeName">主题</span>▾
+        </button>
+        <span class="tsep"></span>
         <button class="tb" data-act="undo" title="撤销 (Ctrl+Z)">↶</button>
         <button class="tb" data-act="redo" title="重做 (Ctrl+Y)">↷</button>
         <span class="tsep"></span>
@@ -330,8 +358,6 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
         <button class="tb wide" data-act="clear" title="清除格式">清除</button>
         <span class="tsep"></span>
         <button class="tb wide" id="btnStylePanel" title="展开/收起全局样式">样式设置 ▾</button>
-        <span class="spacer" style="flex:1"></span>
-        <span class="budget" id="charBudget" title="微信 draft/add 接口的 content 上限为 20000 字符，标签与属性全部计入。复制粘贴没有这个限制。">— 字符</span>
       </div>
 
       <div class="style-panel" id="stylePanel" hidden>
@@ -376,6 +402,12 @@ html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rg
         <div class="phone" id="phone">
           <section id="article" contenteditable="true" spellcheck="false"></section>
         </div>
+      </div>
+      <div class="out-foot">
+        <span>当前主题</span>
+        <b id="footTheme">古风宣纸</b>
+        <span class="spacer" style="flex:1"></span>
+        <span class="budget" id="charBudget" title="微信 draft/add 接口的 content 上限为 20000 字符，标签与属性全部计入。复制粘贴没有这个限制。">— 字符</span>
       </div>
     </div>
   </section>
@@ -1392,7 +1424,7 @@ document.addEventListener('click', e=>{
   if(palette.contains(e.target) || (e.target.closest && e.target.closest('.colorwrap, #gColorBtn'))) return;
   closePalette();
 });
-document.addEventListener('keydown', e=>{ if(e.key === 'Escape') closePalette(); });
+document.addEventListener('keydown', e=>{ if(e.key === 'Escape'){ closePalette(); closeThemePop(); } });
 window.addEventListener('resize', closePalette);
 window.addEventListener('scroll', closePalette, true);
 
@@ -1426,36 +1458,72 @@ document.addEventListener('selectionchange', ()=>{
 });
 
 /* ==========================================================
-   8. 主题条 / 样式面板
+   8. 主题选择弹层 / 样式面板
    ========================================================== */
-function buildThemeStrip(){
-  const strip = $('#themeStrip');
-  strip.innerHTML = THEME_LIST.map(t=>
-    '<button class="tchip" data-id="'+t.id+'" title="'+esc(t.desc)+'">'+
-      '<div class="nm">'+esc(t.name)+'</div>'+
-      '<div class="ds">'+esc(t.desc)+'</div>'+
-      '<div class="sw">'+t.swatch.map(c=>'<i style="background:'+c+'"></i>').join('')+'</div>'+
+/* 主题改成弹层而不是常驻铺开：10 个主题铺开要占两行高度，会把预览区压扁。 */
+const themePop = document.createElement('div');
+themePop.className = 'themepop';
+themePop.hidden = true;
+document.body.appendChild(themePop);
+
+function buildThemePop(){
+  themePop.innerHTML = THEME_LIST.map(t=>
+    '<button type="button" class="tp-item" data-id="'+t.id+'" title="'+esc(t.name+' · '+t.desc)+'">'+
+      '<span class="tp-dots">'+t.swatch.map(c=>'<i style="background:'+c+'"></i>').join('')+'</span>'+
+      '<span class="tp-nm">'+esc(t.name)+'</span>'+
     '</button>').join('');
-  strip.querySelectorAll('.tchip').forEach(chip=>{
-    chip.addEventListener('click', ()=>{
-      const prev = state.theme.id;
-      selectTheme(chip.dataset.id);
-      if(prev !== chip.dataset.id){
-        syncGlobalFromTheme(true);
-        renderArticle();
-        toast('已套用「'+state.theme.name+'」主题');
-      }
-    });
-  });
+}
+function closeThemePop(){ themePop.hidden = true; }
+function openThemePop(anchor){
+  themePop.hidden = false;
+  const r = anchor.getBoundingClientRect();
+  const w = themePop.offsetWidth, h = themePop.offsetHeight;
+  themePop.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + 'px';
+  let top = r.bottom + 6;
+  if(top + h > innerHeight - 8) top = Math.max(8, r.top - h - 6);
+  themePop.style.top = top + 'px';
+}
+/* 工具条按钮与底部状态条都反映当前主题 */
+function paintTheme(){
+  const t = getTheme(state.theme.id);
+  $('#btnThemeName').textContent = t.name;
+  $('#btnThemeDots').innerHTML = t.swatch.map(c=>'<i style="background:'+c+'"></i>').join('');
+  $('#btnTheme').title = '选择排版主题（当前：' + t.name + ' · ' + t.desc + '）';
+  $('#footTheme').textContent = t.name;
+  $$('.tp-item').forEach(c=>c.classList.toggle('on', c.dataset.id===state.theme.id));
 }
 function selectTheme(id){
   state.theme = buildTheme(getTheme(id).cfg);
   state.theme.id = id;
   state.theme.name = getTheme(id).name;
-  $$('#themeStrip .tchip').forEach(c=>c.classList.toggle('on', c.dataset.id===id));
+  paintTheme();
   if(state.g.size==null) syncGlobalFromTheme(false);
   save();
 }
+$('#btnTheme').addEventListener('click', e=>{
+  e.preventDefault();
+  if(themePop.hidden) openThemePop(e.currentTarget); else closeThemePop();
+});
+themePop.addEventListener('click', e=>{
+  const b = e.target.closest('.tp-item');
+  if(!b){ return; }
+  const prev = state.theme.id;
+  selectTheme(b.dataset.id);
+  closeThemePop();
+  if(prev !== b.dataset.id){
+    syncGlobalFromTheme(true);
+    renderArticle();
+    toast('已套用「'+state.theme.name+'」主题');
+  }
+});
+document.addEventListener('click', e=>{
+  if(themePop.hidden) return;
+  if(themePop.contains(e.target)) return;
+  if(e.target.closest && e.target.closest('#btnTheme')) return;
+  closeThemePop();
+});
+window.addEventListener('resize', closeThemePop);
+window.addEventListener('scroll', closeThemePop, true);
 
 /* 样式面板控件 */
 function syncGlobalFromTheme(reset){
@@ -1765,11 +1833,11 @@ function init(){
   $('#phone').classList.toggle('wide', state.wide);
   $('#btnWidth').textContent = state.wide ? '手机预览' : '宽屏预览';
 
-  buildThemeStrip();
+  buildThemePop();
   state.theme = buildTheme(getTheme(initialTheme).cfg);
   state.theme.id = initialTheme;
   state.theme.name = getTheme(initialTheme).name;
-  $$('#themeStrip .tchip').forEach(c=>c.classList.toggle('on', c.dataset.id===initialTheme));
+  paintTheme();
 
   const src = (d && d.source) ? d.source : DEMO;
   $('#source').value = src;
