@@ -1,0 +1,5 @@
+﻿node_modules/
+dist/
+scripts/
+test/artifacts/
+test/verification-report.txt

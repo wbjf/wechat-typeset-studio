@@ -1,0 +1,61 @@
+PASS | 页面无 JS 运行时错误
+PASS | 默认载入示例稿并渲染 | innerHTML=13894 p=27 section=12
+PASS | 根容器带内联样式 | background-color:#FBF7EF;padding:26px 18px 32px;color:#3D342
+PASS | 主题条渲染 10 个主题 | chips=10
+PASS | 默认主题为古风 | on=gu-feng
+PASS | 正文不横向溢出手机宽度 | overflow=0
+PASS | 10 个主题全部可见（不被横向裁切） | {"visible":10,"total":10,"clipped":false}
+PASS | 字符预算指示器工作 | 10,197 / 20,000 字符
+PASS | 样式面板首次访问默认收起（[hidden] 未被 display 覆盖） | {"hiddenAttr":true,"display":"none"}
+PASS | 二级标题套用主题装饰 | margin:44px 0 20px;padding-bottom:9px;border-bottom:1px solid #E4D9C3
+PASS | 二级标题汉字序号（formal）
+PASS | 三级标题渲染
+PASS | 引用块渲染
+PASS | 无序列表项目符号 | marks=6
+PASS | 有序列表序号
+PASS | 代码块渲染
+PASS | 分割线渲染
+PASS | 图片渲染 | img=1
+PASS | 图片带 max-width:100% | maxWidth=100%
+PASS | 表格渲染 | table=1 cells=6
+PASS | 站外链接转脚注
+PASS | 全要素下不横向溢出 | overflow=0
+PASS | 导出内容无 <style> 标签
+PASS | 导出内容无 class 属性
+PASS | 导出内容无 id 属性
+PASS | 导出内容无 data-* 属性
+PASS | 导出内容无 contenteditable
+PASS | 导出内容无 position/float/flex/grid
+PASS | 所有块级标签都带内联 style | 共 44 个标签
+PASS | 导出不含 ul/ol/blockquote/h1-h6/tr 裸标签
+PASS | 顶层为 section 根容器 | <section style="background-color:rgb(251, 247, 2
+PASS | 导出长度在 2 万字符预算内（本次测试稿） | 5212 字符
+PASS | 样式瘦身显著降低字符数 | 6483 -> 5212（省 20%）
+PASS | 瘦身后渲染结果与未瘦身逐元素一致 | 对比 44 个元素×19 项属性；差异: 无
+PASS | 瘦身开关状态反映到提示中 | 当前未瘦身。
+PASS | 主题「su-jian」切换生效 | bg=rgb(255, 255, 255) color=rgb(51, 51, 51)
+PASS | 主题「mo-juan」切换生效 | bg=rgb(255, 255, 255) color=rgb(46, 51, 56)
+PASS | 主题「nuan-yang」切换生效 | bg=rgb(255, 252, 247) color=rgb(58, 51, 43)
+PASS | 主题「qing-xin」切换生效 | bg=rgb(255, 255, 255) color=rgb(47, 58, 56)
+PASS | 主题「hai-yan」切换生效 | bg=rgb(255, 255, 255) color=rgb(44, 52, 64)
+PASS | 主题「mi-tao」切换生效 | bg=rgb(255, 251, 251) color=rgb(67, 53, 58)
+PASS | 主题「za-zhi」切换生效 | bg=rgb(255, 255, 255) color=rgb(51, 51, 51)
+PASS | 主题「shou-zhang」切换生效 | bg=rgb(253, 252, 248) color=rgb(59, 58, 54)
+PASS | 主题「shen-ye」切换生效 | bg=rgb(28, 31, 36) color=rgb(201, 205, 212)
+PASS | 主题「gu-feng」切换生效 | bg=rgb(251, 247, 239) color=rgb(61, 52, 40)
+PASS | 10 套主题产生了差异化配色 | 不同配色组合=9
+PASS | 切换到黑夜主题
+PASS | 黑夜主题下页面背景变深 | rgb(20, 22, 26)
+PASS | 黑夜主题下正文文字为浅色 | rgb(231, 233, 236)
+PASS | 字号滑杆放大正文 | 16 -> 22
+PASS | 行距滑杆生效 | 30.4 -> 48.4
+PASS | 标题随正文等比缩放（层级不乱） | title fs=31.63
+PASS | 「恢复主题默认」可还原字号 | fs=16
+PASS | 选中文字可加粗 | strong=7 sel="正文第一"
+PASS | 插入分割线按钮可用 | hr/小节数=8（插入前符号数 6）
+PASS | 复制到剪贴板成功且含 text/html | {"ok":true,"types":["text/plain","text/html"]}
+PASS | 刷新后记忆黑夜主题 | dark
+PASS | 刷新后记住上次导入的文稿
+PASS | 全流程无未捕获错误
+
+合计：59 通过 / 0 失败

@@ -1,0 +1,1699 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-app="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>公众号排版工作台</title>
+<meta name="description" content="粘贴文稿，一键套用 10 套主题，导出可直接粘贴进微信公众号后台的内联样式正文。纯本地运行，文稿不上传。">
+<meta name="theme-color" content="#07c160">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2307c160'/%3E%3Cpath d='M8 11h16M8 16h16M8 21h10' stroke='%23fff' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* ===================== 应用外壳主题 ===================== */
+:root{
+  --bg:#eef0f3; --panel:#ffffff; --panel2:#f7f8fa; --line:#e3e6ea; --line2:#eef0f3;
+  --text:#1f2329; --text2:#5f6672; --text3:#939aa6;
+  --brand:#07c160; --brand-soft:#e8faf0;
+  --shadow:0 1px 2px rgba(16,24,40,.04), 0 8px 24px rgba(16,24,40,.06);
+  --radius:12px;
+}
+html[data-app="dark"]{
+  --bg:#14161a; --panel:#1d2026; --panel2:#23262d; --line:#2f333b; --line2:#2a2e35;
+  --text:#e7e9ec; --text2:#a4aab6; --text3:#727884;
+  --brand:#0fce68; --brand-soft:#12301f;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 28px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  font-size:14px; display:flex; flex-direction:column; overflow:hidden;
+}
+button{font-family:inherit;font-size:inherit;color:inherit;cursor:pointer;border:none;background:none;}
+input,select,textarea{font-family:inherit;font-size:inherit;color:inherit;}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text3);}
+::-webkit-scrollbar-track{background:transparent;}
+
+/* ===================== 顶栏 ===================== */
+.topbar{
+  height:56px;flex:0 0 56px;display:flex;align-items:center;gap:14px;
+  padding:0 16px;background:var(--panel);border-bottom:1px solid var(--line);z-index:20;
+}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:15px;letter-spacing:.2px;}
+.brand .logo{
+  width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#07c160,#0aa9a0);
+  display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:800;
+}
+.brand small{display:block;font-weight:400;font-size:11px;color:var(--text3);letter-spacing:0;margin-top:1px;}
+.spacer{flex:1;}
+.seg{display:flex;background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:2px;}
+.seg button{padding:5px 11px;border-radius:7px;font-size:13px;color:var(--text2);transition:.15s;}
+.seg button.on{background:var(--panel);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08);font-weight:600;}
+html[data-app="dark"] .seg button.on{background:#343943;box-shadow:none;}
+.btn{
+  padding:7px 13px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);
+  font-size:13px;color:var(--text2);transition:.15s;white-space:nowrap;
+}
+.btn:hover{background:var(--line2);color:var(--text);}
+.btn.primary{background:var(--brand);border-color:var(--brand);color:#fff;font-weight:600;}
+.btn.primary:hover{filter:brightness(1.06);}
+.btn.ghost{background:transparent;}
+
+/* ===================== 工作区 ===================== */
+.workspace{flex:1;display:flex;min-height:0;padding:12px;gap:0;}
+.pane{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:0;overflow:hidden;}
+.pane-src{width:var(--left-w,420px);flex:0 0 auto;}
+.pane-out{flex:1;min-width:0;background:transparent;box-shadow:none;border-radius:0;}
+.splitter{width:12px;flex:0 0 12px;cursor:col-resize;position:relative;}
+.splitter::after{content:"";position:absolute;left:5px;top:50%;transform:translateY(-50%);width:2px;height:36px;border-radius:2px;background:var(--line);transition:.15s;}
+.splitter:hover::after{background:var(--brand);height:64px;}
+
+/* ---------- 左栏 ---------- */
+.pane-head{
+  flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:11px 14px;
+  border-bottom:1px solid var(--line);font-size:13px;color:var(--text2);
+}
+.pane-head .title{font-weight:700;color:var(--text);font-size:13.5px;}
+.mini{
+  padding:4px 9px;border-radius:7px;border:1px solid var(--line);font-size:12px;color:var(--text2);
+  transition:.15s;background:var(--panel2);
+}
+.mini:hover{background:var(--line2);color:var(--text);}
+.mini.danger:hover{color:#e5484d;border-color:#f5c2c3;background:#fdf0f0;}
+#source{
+  flex:1;width:100%;resize:none;border:none;outline:none;background:transparent;
+  padding:16px 16px 20px;line-height:1.85;font-size:14px;color:var(--text);
+  font-family:'SFMono-Regular',Menlo,Consolas,"PingFang SC","Microsoft YaHei",monospace;
+}
+#source::placeholder{color:var(--text3);line-height:2;}
+.pane-foot{
+  flex:0 0 auto;display:flex;gap:14px;align-items:center;padding:9px 14px;
+  border-top:1px solid var(--line);font-size:12px;color:var(--text3);background:var(--panel2);
+}
+.pane-foot b{color:var(--text2);font-weight:600;}
+.dot{width:5px;height:5px;border-radius:50%;background:var(--line);}
+
+/* ---------- 右栏 ---------- */
+.pane-out{display:flex;flex-direction:column;gap:10px;min-height:0;}
+.out-card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;flex:0 0 auto;}
+.out-body{flex:1;min-height:0;display:flex;flex-direction:column;background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;}
+
+/* 主题条 */
+.theme-strip{display:flex;flex-wrap:wrap;gap:8px;padding:11px 14px;}
+.tchip{
+  flex:1 1 104px;max-width:168px;border:1px solid var(--line);border-radius:10px;padding:7px 11px 8px;
+  background:var(--panel2);text-align:left;transition:.15s;
+}
+.tchip:hover{border-color:var(--text3);}
+.tchip.on{border-color:var(--brand);background:var(--brand-soft);box-shadow:inset 0 0 0 1px var(--brand);}
+html[data-app="dark"] .tchip.on{background:#12291d;}
+.tchip .nm{font-size:12.5px;font-weight:600;color:var(--text);white-space:nowrap;}
+.tchip .ds{font-size:10.5px;color:var(--text3);margin-top:2px;white-space:nowrap;}
+.tchip .sw{display:flex;gap:3px;margin-top:6px;}
+.tchip .sw i{width:14px;height:8px;border-radius:3px;display:block;border:1px solid rgba(0,0,0,.06);}
+
+/* 富文本工具条 */
+.toolbar{
+  display:flex;align-items:center;gap:3px;flex-wrap:wrap;padding:8px 12px;
+  border-top:1px solid var(--line);background:var(--panel2);
+}
+.pane-out .toolbar{border-top:none;}
+.tb{
+  min-width:30px;height:30px;padding:0 8px;border-radius:7px;font-size:13px;color:var(--text2);
+  display:inline-flex;align-items:center;justify-content:center;transition:.12s;border:1px solid transparent;
+}
+.tb:hover{background:var(--panel);color:var(--text);border-color:var(--line);}
+.tb:active{transform:scale(.96);}
+.tb.b{font-weight:800;} .tb.i{font-style:italic;} .tb.u{text-decoration:underline;} .tb.s{text-decoration:line-through;}
+.tb.wide{padding:0 10px;font-size:12.5px;}
+.tb.sel{background:var(--panel);border-color:var(--line);color:var(--text);}
+.budget{
+  font-size:11.5px;color:var(--text3);padding:3px 9px;border-radius:20px;
+  background:var(--panel);border:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums;
+}
+.budget.warn{color:#b45309;border-color:#f0c98a;background:#fdf6e7;}
+html[data-app="dark"] .budget.warn{background:#33270f;border-color:#5c451a;color:#e8b464;}
+.budget.over{color:#c0392b;border-color:#f0b5ae;background:#fdf0ee;}
+html[data-app="dark"] .budget.over{background:#3a1a17;border-color:#6b2b24;color:#f0857a;}
+.tsep{width:1px;height:18px;background:var(--line);margin:0 5px;flex:0 0 auto;}
+.colorwrap{position:relative;display:inline-flex;align-items:center;justify-content:center;height:30px;width:34px;border-radius:7px;cursor:pointer;color:var(--text2);}
+.colorwrap:hover{background:var(--panel);color:var(--text);}
+.colorwrap input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;border:none;padding:0;}
+.colorwrap .bar{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);width:15px;height:3px;border-radius:2px;}
+select.mini{padding:4px 6px;border-radius:7px;border:1px solid var(--line);background:var(--panel);font-size:12px;height:30px;}
+
+/* 全局样式面板 */
+.style-panel{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(196px,1fr));gap:10px 18px;
+  padding:12px 14px;border-top:1px solid var(--line);background:var(--panel);
+}
+.style-panel[hidden]{display:none;}
+.fld{display:flex;align-items:center;gap:9px;}
+.fld label{font-size:12px;color:var(--text3);flex:0 0 52px;}
+.fld input[type=range]{flex:1;min-width:0;accent-color:var(--brand);height:3px;}
+.fld .val{font-size:11.5px;color:var(--text2);flex:0 0 40px;text-align:right;font-variant-numeric:tabular-nums;}
+.fld select{flex:1;min-width:0;padding:5px 7px;border-radius:7px;border:1px solid var(--line);background:var(--panel2);font-size:12px;}
+.switch{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;user-select:none;}
+.switch input{accent-color:var(--brand);width:15px;height:15px;}
+
+/* 预览区 */
+.preview-wrap{flex:1;min-height:0;overflow:auto;padding:22px 16px 44px;background:var(--bg);display:flex;justify-content:center;align-items:flex-start;}
+.phone{
+  width:375px;flex:0 0 auto;background:#fff;border-radius:16px;
+  box-shadow:0 2px 6px rgba(16,24,40,.06), 0 18px 48px rgba(16,24,40,.14);
+  border:1px solid rgba(0,0,0,.05);overflow:hidden;
+  transition:width .2s ease;
+}
+html[data-app="dark"] .phone{box-shadow:0 2px 6px rgba(0,0,0,.4), 0 18px 48px rgba(0,0,0,.5);border-color:#000;}
+.phone.wide{width:100%;max-width:760px;}
+.phone-bar{
+  height:34px;display:flex;align-items:center;justify-content:center;gap:6px;
+  background:#f6f7f9;border-bottom:1px solid #eceef1;font-size:11.5px;color:#9aa0aa;
+}
+html[data-app="dark"] .phone-bar{background:#2a2d34;border-bottom-color:#33363d;color:#7c828d;}
+.phone-bar .ttl{max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.phone-bar .live{color:#07c160;}
+.phone.wide .phone-bar{border-radius:16px 16px 0 0;}
+#article{
+  outline:none;min-height:280px;overflow-wrap:break-word;word-break:break-word;
+  transition:box-shadow .15s;
+}
+#article:focus{box-shadow:inset 0 0 0 2px rgba(7,193,96,.35);}
+#article:empty::before{content:"左侧输入内容后，点「一键排版」";display:block;padding:60px 20px;text-align:center;color:#b9bec7;font-size:13px;}
+
+/* toast */
+.toast{
+  position:fixed;left:50%;bottom:34px;transform:translate(-50%,16px);
+  background:#1f2329;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;
+  box-shadow:0 8px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.22s;z-index:99;
+}
+.toast.show{opacity:1;transform:translate(-50%,0);}
+.toast.err{background:#c0392b;}
+
+/* 拖放 */
+.dropmask{
+  position:fixed;inset:0;background:rgba(7,193,96,.10);border:3px dashed var(--brand);
+  display:none;align-items:center;justify-content:center;z-index:80;color:var(--brand);font-size:17px;font-weight:700;
+  backdrop-filter:blur(2px);
+}
+.dropmask.show{display:flex;}
+@media (max-width:900px){
+  .workspace{flex-direction:column;overflow:auto;}
+  .pane-src{width:auto!important;height:260px;flex:0 0 auto;}
+  .splitter{display:none;}
+  .pane-out{min-height:600px;}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">排</span>
+    <span>公众号排版工作台<small>内联样式 · 粘进后台不丢版</small></span>
+  </div>
+  <div class="spacer"></div>
+  <div class="seg" id="appThemeSeg">
+    <button data-t="light" class="on">☀ 白天</button>
+    <button data-t="dark">🌙 黑夜</button>
+  </div>
+  <button class="btn ghost" id="btnWidth" title="切换预览宽度">宽屏预览</button>
+  <button class="btn" id="btnExport">导出 HTML</button>
+  <button class="btn primary" id="btnCopy">复制到公众号</button>
+</header>
+
+<div class="workspace">
+  <!-- 原始文档 -->
+  <section class="pane pane-src">
+    <div class="pane-head">
+      <span class="title">原始文档</span>
+      <span class="dot"></span>
+      <span style="font-size:12px;">Markdown / 纯文本</span>
+      <span class="spacer"></span>
+      <button class="mini" id="btnUpload">上传文件</button>
+      <button class="mini" id="btnDemo">示例</button>
+      <button class="mini danger" id="btnClear">清空</button>
+      <input type="file" id="filePicker" accept=".txt,.md,.markdown,.html,.htm,.docx" hidden>
+    </div>
+    <textarea id="source" spellcheck="false" placeholder="在这里粘贴文稿，或把 .md / .txt / .docx 文件拖进来。
+
+支持写法：
+# 一级标题（文章标题）
+## 二级标题（自动编号）
+### 三级标题
+> 引用
+- 无序列表
+1. 有序列表
+---  分割线
+**加粗**  *斜体*  `代码`
+![图片说明](图片地址)
+
+什么都不写也可以，纯段落会自动分段。"></textarea>
+    <div class="pane-foot">
+      <span><b id="statChar">0</b> 字</span>
+      <span><b id="statPara">0</b> 段</span>
+      <span class="spacer" style="flex:1"></span>
+      <span id="statRead">约 0 分钟</span>
+    </div>
+  </section>
+
+  <div class="splitter" id="splitter"></div>
+
+  <!-- 排版结果 -->
+  <section class="pane pane-out">
+    <div class="out-card">
+      <div class="theme-strip" id="themeStrip"></div>
+
+      <div class="toolbar" id="rtToolbar">
+        <button class="tb" data-act="undo" title="撤销 (Ctrl+Z)">↶</button>
+        <button class="tb" data-act="redo" title="重做 (Ctrl+Y)">↷</button>
+        <span class="tsep"></span>
+        <select class="mini" id="fmtSelect" title="段落格式">
+          <option value="p">正文</option>
+          <option value="h3">小标题</option>
+          <option value="h2">大标题</option>
+        </select>
+        <span class="tsep"></span>
+        <button class="tb b" data-act="bold" title="加粗 (Ctrl+B)">B</button>
+        <button class="tb i" data-act="italic" title="斜体 (Ctrl+I)">I</button>
+        <button class="tb u" data-act="underline" title="下划线 (Ctrl+U)">U</button>
+        <button class="tb s" data-act="strikeThrough" title="删除线">S</button>
+        <span class="tsep"></span>
+        <label class="colorwrap" title="字体颜色"><span>A</span><span class="bar" id="barFg" style="background:#9E2B25"></span><input type="color" id="pickFg" value="#9E2B25"></label>
+        <label class="colorwrap" title="背景高亮"><span style="background:linear-gradient(transparent 55%, #FFE08A 55%)">A</span><span class="bar" id="barBg" style="background:#FFE08A"></span><input type="color" id="pickBg" value="#FFE08A"></label>
+        <span class="tsep"></span>
+        <select class="mini" id="sizeSelect" title="选中文字字号">
+          <option value="">字号</option>
+          <option value="12">12</option><option value="13">13</option><option value="14">14</option>
+          <option value="15">15</option><option value="16">16</option><option value="17">17</option>
+          <option value="18">18</option><option value="20">20</option><option value="22">22</option><option value="24">24</option>
+        </select>
+        <span class="tsep"></span>
+        <button class="tb" data-act="justifyLeft" title="左对齐">左</button>
+        <button class="tb" data-act="justifyCenter" title="居中">中</button>
+        <button class="tb" data-act="justifyRight" title="右对齐">右</button>
+        <span class="tsep"></span>
+        <button class="tb wide" data-act="quote" title="引用块">引用</button>
+        <button class="tb" data-act="insertUnorderedList" title="无序列表">• 列表</button>
+        <button class="tb" data-act="insertOrderedList" title="有序列表">1. 列表</button>
+        <button class="tb wide" data-act="hr" title="插入分割线">分割线</button>
+        <button class="tb wide" data-act="image" title="插入图片">图片</button>
+        <button class="tb wide" data-act="clear" title="清除格式">清除</button>
+        <span class="tsep"></span>
+        <button class="tb wide" id="btnStylePanel" title="展开/收起全局样式">样式设置 ▾</button>
+        <span class="spacer" style="flex:1"></span>
+        <span class="budget" id="charBudget" title="微信 draft/add 接口的 content 上限为 20000 字符，标签与属性全部计入。复制粘贴没有这个限制。">— 字符</span>
+      </div>
+
+      <div class="style-panel" id="stylePanel" hidden>
+        <div class="fld"><label>正文字号</label><input type="range" id="gSize" min="12" max="24" step="0.5"><span class="val" id="vSize">16</span></div>
+        <div class="fld"><label>行间距</label><input type="range" id="gLh" min="1.3" max="2.6" step="0.05"><span class="val" id="vLh">1.9</span></div>
+        <div class="fld"><label>字间距</label><input type="range" id="gLs" min="0" max="3" step="0.1"><span class="val" id="vLs">0.5</span></div>
+        <div class="fld"><label>段间距</label><input type="range" id="gGap" min="0" max="44" step="1"><span class="val" id="vGap">18</span></div>
+        <div class="fld"><label>正文字体</label>
+          <select id="gFamily">
+            <option value="">跟主题</option>
+            <option value="-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif">黑体 / 无衬线</option>
+            <option value="'Songti SC','STSong','SimSun','Noto Serif SC',serif">宋体 / 衬线</option>
+            <option value="'Kaiti SC','STKaiti','KaiTi',serif">楷体</option>
+            <option value="'FangSong','STFangsong',serif">仿宋</option>
+            <option value="'PingFang SC','Microsoft YaHei',sans-serif">苹方</option>
+          </select>
+        </div>
+        <div class="fld"><label>正文颜色</label><input type="color" id="gColor" value="#333333" style="width:34px;height:26px;border:1px solid var(--line);border-radius:6px;background:none;padding:0;cursor:pointer;">
+          <span class="switch"><input type="checkbox" id="useColor"> 启用</span>
+        </div>
+        <div class="fld"><label>缩进</label>
+          <span class="switch"><input type="checkbox" id="gIndent"> 段落首行缩进 2 字符</span>
+        </div>
+        <div class="fld"><label>外链</label>
+          <span class="switch"><input type="checkbox" id="gFootnote" checked> 站外链接转脚注（微信正文不保留站外链接）</span>
+        </div>
+        <div class="fld"><label>标题块</label>
+          <span class="switch"><input type="checkbox" id="gTitleBlock" checked> 输出标题与作者行</span>
+        </div>
+        <div class="fld"><label>瘦身</label>
+          <span class="switch"><input type="checkbox" id="gSlim" checked title="删掉与祖先同值的可继承声明，靠继承生效。约省三成字符，样式不变。若个别地方样式丢失可关掉。"> 样式瘦身（靠继承省字符）</span>
+        </div>
+        <div class="fld"><label>操作</label>
+          <button class="mini" id="btnResetStyle">恢复主题默认</button>
+          <button class="mini" id="btnRetouch">重新排版</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="out-body">
+      <div class="preview-wrap" id="previewWrap">
+        <div class="phone" id="phone">
+          <div class="phone-bar"><span class="live">●</span><span class="ttl" id="phoneTitle">公众号正文预览</span><span>375px</span></div>
+          <section id="article" contenteditable="true" spellcheck="false"></section>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="dropmask" id="dropmask">松开即可导入文稿</div>
+
+<script>
+"use strict";
+
+/* ==========================================================
+   0. 基础工具
+   ========================================================== */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+
+function esc(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function css(o){
+  return Object.entries(o)
+    .filter(([,v]) => v!==null && v!==undefined && v!=='')
+    .map(([k,v]) => k+':'+v).join(';');
+}
+/* st(样式对象, 可被全局控件覆盖的标记) —— 同时把原始字号写进 data-fs，供缩放使用 */
+function st(o, fl){
+  let d='';
+  const fs = parseFloat(o['font-size']);
+  if(!isNaN(fs)) d += ' data-fs="'+fs+'"';
+  if(fl){
+    if(fl.lh)     d += ' data-lh="1"';
+    if(fl.ls)     d += ' data-ls="1"';
+    if(fl.gap)    d += ' data-gap="1"';
+    if(fl.fam)    d += ' data-fam="1"';
+    if(fl.color)  d += ' data-color="1"';
+    if(fl.indent) d += ' data-indent="1"';
+  }
+  return 'style="'+css(o)+'"'+d;
+}
+/* 标记：正文段落 / 一般文字块 */
+const T_P   = {lh:1, ls:1, gap:1, fam:1, color:1, indent:1};
+const T_BLK = {lh:1, ls:1, fam:1};
+
+const FONT = {
+  serif: "'Songti SC','STSong','SimSun','Noto Serif SC',serif",
+  kai:   "'Kaiti SC','STKaiti','KaiTi',serif",
+  sans:  "-apple-system,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif",
+  mono:  "'SFMono-Regular',Menlo,Consolas,monospace"
+};
+
+/* 中文序号 */
+const CN  = ['零','一','二','三','四','五','六','七','八','九','十'];
+const FM  = ['零','壹','贰','叁','肆','伍','陆','柒','捌','玖','拾'];
+function cnNum(n, arr){
+  if(n<=10) return arr[n];
+  if(n<20)  return arr[1]+'十'+(n>10?arr[n-10]:'');
+  if(n<100){ const t=Math.floor(n/10), o=n%10; return arr[t]+'十'+(o?arr[o]:''); }
+  return String(n);
+}
+function formatNum(n, style){
+  if(style==='none')   return '';
+  if(style==='arabic') return String(n).padStart(2,'0');
+  if(style==='formal') return cnNum(n, FM);
+  return cnNum(n, CN);
+}
+
+/* ==========================================================
+   1. 主题定义 —— 全部严格遵守微信内联白名单
+      · 只用 section / p / span / img / table 真实元素
+      · 不用伪元素 / position / float / flex / grid
+      · 装饰一律用真实 span 或 border
+   ========================================================== */
+function buildTheme(c){
+  const base   = c.base || 16;
+  const lh     = c.lh   || 1.85;
+  const ls     = (c.ls!=null ? c.ls : 0.5) + 'px';
+  const gap    = (c.gap!=null ? c.gap : 18);
+  const font   = FONT[c.font || 'sans'];
+  const hfont  = FONT[c.headFont || c.font || 'sans'];
+  const radius = (c.radius!=null ? c.radius : 6);
+  const S = {};
+
+  /* 根容器 */
+  S.root = {
+    'background-color': c.bg,
+    padding: c.pad || '26px 18px 32px',
+    color: c.fg,
+    'font-size': base+'px',
+    'line-height': lh,
+    'letter-spacing': ls,
+    'font-family': font,
+    'text-align':'left'
+  };
+
+  /* 标题 / 元信息 / 导语 */
+  S.title = {
+    'font-size': (c.titleSize || base+7)+'px', 'line-height':'1.5', 'font-weight':'700',
+    color: c.heading, 'letter-spacing':'1px', 'font-family': hfont,
+    'text-align': c.titleAlign || 'left', margin:'4px 0 6px'
+  };
+  S.meta = {
+    'font-size':'12px','line-height':'1.8', color:c.muted, 'letter-spacing':'1px',
+    'text-align': c.titleAlign || 'left', margin:'0 0 26px'
+  };
+  S.lead = {
+    'font-size': (base-1)+'px','line-height':lh, color: c.fgSoft || c.fg, 'letter-spacing':ls,
+    'background-color': c.tint, 'border-left':'3px solid '+c.accent,
+    padding:'14px 16px', margin:'0 0 28px', 'border-radius': '0 '+radius+'px '+radius+'px 0'
+  };
+
+  /* 二级标题 */
+  const h2Size = c.h2Size || 18;
+  switch(c.h2){
+    case 'seal':
+      S.h2    = { margin:'44px 0 20px', 'padding-bottom':'9px', 'border-bottom':'1px solid '+c.line };
+      S.h2num = { display:'inline-block','background-color':c.accent, color:c.onAccent||c.bg, 'font-family':hfont,
+                  'font-size':'14px','line-height':'1.5','letter-spacing':'1px', padding:'2px 9px',
+                  'border-radius':'3px','margin-right':'10px','vertical-align':'2px' };
+      S.h2txt = { 'font-size':(h2Size+1)+'px','font-weight':'700', color:c.heading, 'letter-spacing':'1.5px','font-family':hfont };
+      break;
+    case 'card':
+      S.h2    = { 'background-color':c.heading, 'border-radius':radius+'px', padding:'11px 15px', margin:'36px 0 18px' };
+      S.h2num = { display:'inline-block','background-color':c.accent2, color:'#FFFFFF','font-size':'13px',
+                  'line-height':'1.6','letter-spacing':'0.6px', padding:'1px 8px','border-radius':'3px',
+                  'margin-right':'9px','vertical-align':'2px' };
+      S.h2txt = { 'font-size':h2Size+'px','font-weight':'700', color:'#FFFFFF','letter-spacing':'0.8px' };
+      break;
+    case 'ribbon':
+      S.h2    = { 'background-color':c.tint, 'border-left':'4px solid '+c.accent,
+                  'border-radius':'0 '+radius+'px '+radius+'px 0', padding:'10px 14px', margin:'34px 0 16px' };
+      S.h2num = { display:'inline-block','background-color':c.accent, color:'#FFFFFF','font-size':'13px',
+                  'line-height':'1.6', padding:'1px 8px','border-radius':radius+'px','margin-right':'9px','vertical-align':'2px' };
+      S.h2txt = { 'font-size':h2Size+'px','font-weight':'700', color:c.heading, 'letter-spacing':'0.8px' };
+      break;
+    case 'underline':
+      S.h2    = { margin:'38px 0 16px','padding-bottom':'8px','border-bottom':'2px solid '+c.accent };
+      S.h2num = { display:'inline-block', color:c.accent,'font-size':'13px','font-weight':'700','letter-spacing':'1px','margin-right':'8px' };
+      S.h2txt = { 'font-size':h2Size+'px','font-weight':'700', color:c.heading, 'letter-spacing':'0.8px' };
+      break;
+    case 'plain':
+      S.h2    = { margin:'36px 0 14px' };
+      S.h2num = { display:'inline-block', color:c.muted,'font-size':'14px','letter-spacing':'0.6px','margin-right':'8px' };
+      S.h2txt = { 'font-size':(h2Size+1)+'px','font-weight':'700', color:c.heading,'letter-spacing':'0.8px' };
+      break;
+    default: /* bar */
+      H2BAR(S, hfont, h2Size, c, radius);
+  }
+
+  /* 三级标题 */
+  S.h3 = {
+    'font-size': (c.h3Size || base)+'px','line-height':'1.8','font-weight':'700',
+    color: c.accentDeep || c.accent, 'letter-spacing':'0.6px',
+    margin:'28px 0 12px', 'padding-left':'11px','border-left':'3px solid '+c.accent2,
+    'font-family': c.h3Font ? hfont : font
+  };
+
+  /* 正文 */
+  S.p = {
+    'font-size': base+'px','line-height':lh, color:c.fg, 'letter-spacing':ls,
+    'font-family': font, margin:'0 0 '+gap+'px','text-align':'justify'
+  };
+
+  /* 行内 */
+  S.strong = Object.assign(
+    { color: c.strongColor || c.accentDeep || c.accent, 'font-weight':'700' },
+    c.strongBg ? { 'background-color':c.tint, padding:'0 3px','border-radius':'2px' } : {}
+  );
+  S.em     = { 'font-style':'italic', color: c.fgSoft || c.muted };
+  S.strike = { 'text-decoration':'line-through', color:c.muted };
+  S.codeInline = { 'font-family':FONT.mono, 'font-size':(base-2)+'px','background-color':c.codeBg,
+                   color: c.accentDeep || c.accent, padding:'1px 5px','border-radius':'3px' };
+  S.a   = { color: c.accentDeep || c.accent, 'text-decoration':'underline' };
+  S.sup = { 'font-size':'12px', color:c.accent, 'vertical-align':'super' };
+
+  /* 引用 */
+  const quoteP = { 'font-size':(base-1)+'px','line-height':lh, color: c.fgSoft || c.fg, 'letter-spacing':ls, margin:'0 0 10px',
+                   'font-family': c.quoteFont ? hfont : font };
+  if(c.quote==='line'){
+    S.quote = { 'border-left':'2px solid '+c.line, padding:'4px 0 4px 16px', margin:'22px 0' };
+  }else if(c.quote==='card'){
+    S.quote = { 'background-color':c.tint, 'border-radius':radius+'px', padding:'16px 18px 6px',
+                margin:'22px 0', 'border':'1px solid '+c.line };
+  }else{
+    S.quote = { 'background-color':c.tint, 'border-left':'3px solid '+c.accent,
+                'border-radius':'0 3px 3px 0', padding:'16px 18px 6px', margin:'24px 0' };
+  }
+  S.quoteP   = quoteP;
+  S.quoteSrc = { 'font-size':'13px','line-height':'1.8', color:c.muted,'text-align':'right', margin:'0 0 10px' };
+
+  /* 列表 */
+  S.ul = { margin:'0 0 '+gap+'px' };
+  S.ol = { margin:'0 0 '+gap+'px' };
+  S.li = { 'font-size':base+'px','line-height':lh, color:c.fg,'letter-spacing':ls, 'font-family':font,
+           margin:'0 0 10px','text-align':'justify' };
+  S.liMark = { color:c.accent, 'font-size':(base-3)+'px','margin-right':'9px','font-weight':'700' };
+  S.liL1   = { 'padding-left':'20px','font-size':(base-1)+'px', color:c.fgSoft || c.fg };
+  S.liNum  = c.liNumBadge
+    ? { display:'inline-block','background-color':c.accent, color:'#FFFFFF','font-size':'12px','line-height':'1.5',
+        'text-align':'center', width:'19px', padding:'1px 0','border-radius':'3px','margin-right':'9px','vertical-align':'2px' }
+    : { display:'inline-block', color: c.accentDeep || c.accent,'font-size':(base-1)+'px','font-weight':'700',
+        'line-height':'1.5','margin-right':'8px' };
+
+  /* 代码块 */
+  S.code   = { 'background-color':c.codeBg,'border-radius':radius+'px', padding:'14px 16px 6px', margin:'22px 0' };
+  S.codeTag= { 'font-size':'11px','line-height':'1.6', color:c.muted,'letter-spacing':'1px', margin:'0 0 8px' };
+  S.codeP  = { 'font-family':FONT.mono,'font-size':'13px','line-height':'1.8', color:c.codeText || c.fg,
+               margin:'0 0 8px','white-space':'pre-wrap','word-break':'break-all' };
+
+  /* 图片 */
+  S.figure    = { margin:'24px 0' };
+  S.img       = { display:'block','max-width':'100%', height:'auto', margin:'0 auto','border-radius':radius+'px' };
+  S.figcaption= { 'font-size':'12px','line-height':'1.8', color:c.muted,'text-align':'center', margin:'10px 0 0' };
+
+  /* 分割线 */
+  S.hr    = { margin:'34px 0','text-align':'center' };
+  S.hrTxt = { 'font-size':'12px','line-height':'1.8', color:c.accent2,'letter-spacing':'4px','text-align':'center', margin:'0' };
+
+  /* 表格 */
+  S.tableWrap = { margin:'22px 0','overflow-x':'auto' };
+  S.table     = { width:'100%','border-collapse':'collapse','font-size':'14px' };
+  S.th = { 'background-color':c.tint, color:c.heading,'font-weight':'700','font-size':'14px','line-height':'1.7',
+           padding:'9px 10px','border':'1px solid '+c.line,'text-align':'center' };
+  S.td = { color:c.fg,'font-size':'14px','line-height':'1.7', padding:'9px 10px','border':'1px solid '+c.line };
+
+  /* 脚注 */
+  S.fn      = { margin:'36px 0 0','padding-top':'16px','border-top':'1px solid '+c.line };
+  S.fnTitle = { 'font-family':hfont,'font-size':'14px','font-weight':'700', color:c.accentDeep || c.accent,
+                'letter-spacing':'2px', margin:'0 0 10px' };
+  S.fnItem  = { 'font-size':'12px','line-height':'1.8', color:c.muted,'letter-spacing':'0.5px',
+                'word-break':'break-all', margin:'0 0 6px' };
+
+  return { cfg:c, styles:S, mark:c.mark||'◆', divider:c.divider||'◆　◆　◆', h2num:c.h2num||'common' };
+}
+
+function H2BAR(S, hfont, h2Size, c, radius){
+  S.h2    = { margin:'40px 0 16px','padding-left':'12px','border-left':'3px solid '+c.accent };
+  S.h2num = { display:'inline-block', color:c.accent,'font-size':'14px','line-height':'1.6','letter-spacing':'0.6px',
+              'margin-right':'8px','vertical-align':'1px' };
+  S.h2txt = { 'font-size':h2Size+'px','font-weight':'700', color:c.heading,'letter-spacing':'0.8px','font-family':hfont };
+}
+
+/* ---------- 主题清单 ---------- */
+const THEME_LIST = [
+  { id:'gu-feng', name:'古风宣纸', desc:'人文 / 历史 / 掌故', swatch:['#9E2B25','#FBF7EF','#C4A56B'],
+    cfg:{ bg:'#FBF7EF', fg:'#3D3428', fgSoft:'#6B5A44', heading:'#2C2016', muted:'#9A8E7C',
+      accent:'#9E2B25', accentDeep:'#8C3A22', accent2:'#C4A56B', tint:'#F4EDE0', line:'#E4D9C3',
+      codeBg:'#F0E9DC', codeText:'#4A3F30', font:'serif', headFont:'kai', quoteFont:true, h3Font:true,
+      base:16, lh:1.9, ls:0.5, gap:20, radius:3, mark:'◆', divider:'◆　◆　◆',
+      h2:'seal', h2num:'formal', quote:'block', titleAlign:'center', strongBg:false } },
+
+  { id:'su-jian', name:'素简', desc:'长文 / 考据 / 学术', swatch:['#1A1A1A','#FFFFFF','#BFBFBF'],
+    cfg:{ bg:'#FFFFFF', fg:'#333333', fgSoft:'#5A5A5A', heading:'#1A1A1A', muted:'#A0A0A0',
+      accent:'#1A1A1A', accent2:'#BFBFBF', tint:'#F7F7F7', line:'#E4E4E4',
+      codeBg:'#F4F4F4', codeText:'#333333', font:'sans', base:16, lh:1.85, ls:0.4, gap:18, radius:2,
+      mark:'·', divider:'·　·　·', h2:'bar', h2num:'common', quote:'line',
+      titleAlign:'left', strongBg:true } },
+
+  { id:'mo-juan', name:'墨卷', desc:'干货 / 盘点 / 合集', swatch:['#16342C','#4EA88A','#EDF5F1'],
+    cfg:{ bg:'#FFFFFF', fg:'#2E3338', fgSoft:'#3E5A50', heading:'#16342C', muted:'#9AA4A0',
+      accent:'#1B7A5E', accent2:'#4EA88A', tint:'#EDF5F1', line:'#E4EDEA',
+      codeBg:'#F5F8F7', codeText:'#2E3338', font:'sans', base:16, lh:1.8, ls:0.4, gap:18, radius:6,
+      mark:'◆', divider:'◆　◆　◆', h2:'card', h2num:'arabic', quote:'block',
+      titleAlign:'left', liNumBadge:true } },
+
+  { id:'nuan-yang', name:'暖阳', desc:'生活 / 美食 / 日常', swatch:['#D97706','#FEF6E7','#2A2118'],
+    cfg:{ bg:'#FFFCF7', fg:'#3A332B', fgSoft:'#6B5C46', heading:'#2A2118', muted:'#A79680',
+      accent:'#D97706', accentDeep:'#B45309', accent2:'#F59E0B', tint:'#FEF6E7', line:'#F0E2C9',
+      codeBg:'#FAF1E2', codeText:'#4A3F30', font:'serif', headFont:'sans', base:16, lh:1.9, ls:0.5,
+      gap:20, radius:8, mark:'✦', divider:'·　·　·', h2:'ribbon', h2num:'common', quote:'card',
+      titleAlign:'left' } },
+
+  { id:'qing-xin', name:'青绿', desc:'科普 / 健康 / 自然', swatch:['#0E9F6E','#E9F9F2','#123B33'],
+    cfg:{ bg:'#FFFFFF', fg:'#2F3A38', fgSoft:'#4C6660', heading:'#123B33', muted:'#93A5A0',
+      accent:'#0E9F6E', accentDeep:'#0B7A55', accent2:'#5DD9A8', tint:'#E9F9F2', line:'#D5EDE4',
+      codeBg:'#F0FAF6', codeText:'#2F3A38', font:'sans', base:16, lh:1.85, ls:0.5, gap:19, radius:10,
+      mark:'✓', divider:'—　—　—', h2:'underline', h2num:'common', quote:'block', titleAlign:'left' } },
+
+  { id:'hai-yan', name:'海盐蓝', desc:'科技 / 职场 / 工具', swatch:['#2563EB','#EEF4FF','#16233A'],
+    cfg:{ bg:'#FFFFFF', fg:'#2C3440', fgSoft:'#4B5A6E', heading:'#16233A', muted:'#93A0B5',
+      accent:'#2563EB', accentDeep:'#1D4ED8', accent2:'#93B4F7', tint:'#EEF4FF', line:'#DCE6F8',
+      codeBg:'#F2F6FE', codeText:'#2C3440', font:'sans', base:15.5, lh:1.8, ls:0.4, gap:17, radius:6,
+      mark:'▸', divider:'◇　◇　◇', h2:'bar', h2num:'arabic', quote:'block', titleAlign:'left' } },
+
+  { id:'mi-tao', name:'蜜桃', desc:'女性 / 情感 / 穿搭', swatch:['#DB2777','#FDF0F6','#4A2434'],
+    cfg:{ bg:'#FFFBFB', fg:'#43353A', fgSoft:'#6E505C', heading:'#4A2434', muted:'#B494A0',
+      accent:'#DB2777', accentDeep:'#BE185D', accent2:'#F9A8D4', tint:'#FDF0F6', line:'#F5DDE8',
+      codeBg:'#FCEFF5', codeText:'#43353A', font:'sans', base:16, lh:1.88, ls:0.5, gap:19, radius:12,
+      mark:'❀', divider:'❀　❀　❀', h2:'ribbon', h2num:'formal', quote:'card',
+      titleAlign:'center', strongColor:'#BE185D' } },
+
+  { id:'za-zhi', name:'杂志', desc:'观点 / 品牌 / 大标题', swatch:['#E11D48','#111111','#FFF1F3'],
+    cfg:{ bg:'#FFFFFF', fg:'#333333', fgSoft:'#666666', heading:'#111111', muted:'#999999',
+      accent:'#E11D48', accent2:'#F0A0B0', tint:'#FFF1F3', line:'#E8E8E8',
+      codeBg:'#F6F6F6', codeText:'#333333', font:'sans', headFont:'serif', base:16, lh:1.9, ls:0.6,
+      gap:20, radius:0, mark:'—', divider:'＊　＊　＊', h2:'underline', h2num:'arabic', quote:'line',
+      titleAlign:'left', titleSize:27, h2Size:20 } },
+
+  { id:'shou-zhang', name:'手账', desc:'笔记 / 教程 / 清单', swatch:['#2B6CB0','#FDFCF8','#DDE3EA'],
+    cfg:{ bg:'#FDFCF8', fg:'#3B3A36', fgSoft:'#5C5A52', heading:'#2B2A26', muted:'#9C9A92',
+      accent:'#2B6CB0', accentDeep:'#2C5282', accent2:'#9DB8D6', tint:'#F3F6FA', line:'#DDE3EA',
+      codeBg:'#F2F1EC', codeText:'#4A4945', font:'sans', base:15.5, lh:1.92, ls:0.4, gap:18, radius:8,
+      mark:'✎', divider:'—　—　—', h2:'underline', h2num:'common', quote:'card', titleAlign:'center' } },
+
+  { id:'shen-ye', name:'深夜墨', desc:'夜读 / 随笔 / 深度', swatch:['#1C1F24','#E8B464','#C9CDD4'],
+    cfg:{ bg:'#1C1F24', fg:'#C9CDD4', fgSoft:'#A7AFBA', heading:'#EDEFF2', muted:'#6F7683',
+      accent:'#E8B464', accentDeep:'#D9A34E', accent2:'#8A6E38', tint:'#262A31', line:'#333842',
+      codeBg:'#24282F', codeText:'#B8BEC8', onAccent:'#1C1F24', font:'sans', base:16, lh:1.9, ls:0.5,
+      gap:20, radius:8, mark:'◆', divider:'◆　◆　◆', h2:'ribbon', h2num:'formal', quote:'card',
+      titleAlign:'center', strongColor:'#E8B464' } }
+];
+
+/* ==========================================================
+   2. 文稿解析
+   ========================================================== */
+const RE_HEAD   = /^(#{1,6})\s+(.*)$/;
+const RE_QUOTE  = /^>\s?(.*)$/;
+const RE_UL     = /^(\s*)[-*+]\s+(.*)$/;
+const RE_OL     = /^(\s*)\d+[.、)]\s+(.*)$/;
+const RE_HR     = /^\s*([-*_])\s*\1\s*\1[\s\-*_]*$/;
+const RE_IMG    = /^!\[([^\]]*)\]\(([^)]+)\)\s*$/;
+const RE_FENCE  = /^```(.*)$/;
+const RE_TSEP   = /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$/;
+
+function isBlockStart(l){
+  return !l.trim() || RE_HEAD.test(l) || RE_QUOTE.test(l) || RE_UL.test(l) ||
+         RE_OL.test(l) || RE_HR.test(l) || RE_FENCE.test(l);
+}
+function splitRow(l){
+  return l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(s=>s.trim());
+}
+
+function parseSource(src){
+  const meta = {};
+  let body = src.replace(/\r\n?/g,'\n');
+
+  const fm = body.match(/^---\n([\s\S]*?)\n---\n?/);
+  if(fm){
+    fm[1].split('\n').forEach(line=>{
+      const i = line.indexOf(':');
+      if(i>0){
+        const k = line.slice(0,i).trim().toLowerCase();
+        const v = line.slice(i+1).trim().replace(/^["']|["']$/g,'');
+        if(k) meta[k] = v;
+      }
+    });
+    body = body.slice(fm[0].length);
+  }
+
+  const lines = body.split('\n');
+  const blocks = [];
+  let i = 0;
+
+  while(i < lines.length){
+    const line = lines[i];
+    if(!line.trim()){ i++; continue; }
+
+    /* 代码围栏 */
+    let m;
+    if(m = line.match(RE_FENCE)){
+      const tag = m[1].trim();
+      const buf = []; i++;
+      while(i<lines.length && !RE_FENCE.test(lines[i])){ buf.push(lines[i]); i++; }
+      i++;
+      blocks.push({type:'code', tag, lines:buf});
+      continue;
+    }
+    /* 分割线 */
+    if(RE_HR.test(line)){ blocks.push({type:'hr'}); i++; continue; }
+    /* 表格 */
+    if(line.includes('|') && i+1<lines.length && RE_TSEP.test(lines[i+1]) && lines[i+1].includes('-')){
+      const head = splitRow(line);
+      i += 2;
+      const rows = [];
+      while(i<lines.length && lines[i].trim() && lines[i].includes('|')){ rows.push(splitRow(lines[i])); i++; }
+      blocks.push({type:'table', head, rows});
+      continue;
+    }
+    /* 标题 */
+    if(m = line.match(RE_HEAD)){
+      blocks.push({type:'h'+Math.min(m[1].length,3), text:m[2].trim()});
+      i++; continue;
+    }
+    /* 引用 */
+    if(RE_QUOTE.test(line)){
+      const buf = [];
+      while(i<lines.length && RE_QUOTE.test(lines[i])){ buf.push(lines[i].match(RE_QUOTE)[1]); i++; }
+      blocks.push({type:'quote', text:buf.join('\n')});
+      continue;
+    }
+    /* 无序列表 */
+    if(m = line.match(RE_UL)){
+      const items = [];
+      while(i<lines.length && RE_UL.test(lines[i])){ items.push(lines[i].match(RE_UL)[2]); i++; }
+      blocks.push({type:'ul', items});
+      continue;
+    }
+    /* 有序列表 */
+    if(m = line.match(RE_OL)){
+      const items = [];
+      while(i<lines.length && RE_OL.test(lines[i])){ items.push(lines[i].match(RE_OL)[2]); i++; }
+      blocks.push({type:'ol', items});
+      continue;
+    }
+    /* 独占一行图片 */
+    if(m = line.match(RE_IMG)){
+      blocks.push({type:'img', alt:m[1], src:m[2]});
+      i++; continue;
+    }
+    /* 段落 */
+    const buf = [line.trim()]; i++;
+    while(i<lines.length && !isBlockStart(lines[i]) && !RE_IMG.test(lines[i])){ buf.push(lines[i].trim()); i++; }
+    blocks.push({type:'p', text:buf.join(' ')});
+  }
+  return {meta, blocks};
+}
+
+/* 行内格式 */
+function inline(text, ctx){
+  let s = esc(text);
+
+  const codes = [];
+  s = s.replace(/`([^`]+)`/g, (_,c)=>{ codes.push(c); return '\u0001'+(codes.length-1)+'\u0001'; });
+
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, (_,c)=>'<strong '+st(ctx.S.strong)+'>'+c+'</strong>');
+  s = s.replace(/~~([^~\n]+)~~/g,      (_,c)=>'<span '+st(ctx.S.strike)+'>'+c+'</span>');
+  s = s.replace(/(^|[^*\n])\*([^*\n]+)\*/g, (_,p,c)=>p+'<em '+st(ctx.S.em)+'>'+c+'</em>');
+
+  s = s.replace(/\[([^\]\n]+)\]\(([^)\s]+)\)/g, (_,t,u)=>{
+    if(ctx.footnote && /^https?:\/\//i.test(u)){
+      ctx.footnotes.push({t, u});
+      return '<span '+st(ctx.S.sup)+'>['+ctx.footnotes.length+']</span>';
+    }
+    return '<a href="'+u+'" '+st(ctx.S.a)+'>'+t+'</a>';
+  });
+
+  s = s.replace(/\u0001(\d+)\u0001/g, (_,i)=>'<span '+st(ctx.S.codeInline)+'>'+codes[+i]+'</span>');
+  return s;
+}
+
+/* ==========================================================
+   3. 渲染
+   ========================================================== */
+const state = {
+  source:'', theme:null, appTheme:'light',
+  wide:false, titleBlock:true, footnote:true, slim:true,
+  g:{ size:null, lh:null, ls:null, gap:null, family:'', color:'', useColor:false, indent:false }
+};
+
+function getTheme(id){
+  return THEME_LIST.find(t=>t.id===id) || THEME_LIST[0];
+}
+
+function renderArticle(){
+  const T = state.theme;
+  const S = T.styles;
+  const parsed = parseSource(state.source);
+
+  const ctx = { S, footnote:state.footnote, footnotes:[], sectionNo:0, meta:parsed.meta };
+
+  const h2numStyle = parsed.meta.h2_num || T.h2num;
+  const dividerTxt = parsed.meta.divider || T.divider;
+
+  const blocks = parsed.blocks.slice();
+  const parts = [];
+
+  /* 标题 + 元信息 + 导语 */
+  let titleText = parsed.meta.title || '';
+  if(blocks.length && blocks[0].type==='h1'){
+    if(!titleText) titleText = blocks[0].text;
+    blocks.shift();
+  }
+  if(state.titleBlock && titleText){
+    parts.push('<p '+st(S.title)+'>'+inline(titleText, ctx)+'</p>');
+    const metaLine = [parsed.meta.author, parsed.meta.date].filter(Boolean).join('　·　');
+    if(metaLine) parts.push('<p '+st(S.meta)+'>'+esc(metaLine)+'</p>');
+  }
+  if(parsed.meta.lead){
+    parts.push('<p '+st(S.lead, T_BLK)+'>'+inline(parsed.meta.lead, ctx)+'</p>');
+  }
+
+  /* 正文 */
+  for(const b of blocks){
+    switch(b.type){
+      case 'h1':
+        parts.push('<p '+st(S.title)+'>'+inline(b.text, ctx)+'</p>');
+        break;
+      case 'h2': {
+        ctx.sectionNo++;
+        const label = formatNum(ctx.sectionNo, h2numStyle);
+        const num = label ? '<span '+st(S.h2num)+'>'+esc(label)+'</span> ' : '';
+        parts.push('<section '+st(S.h2)+'>'+num+'<span '+st(S.h2txt)+'>'+inline(b.text, ctx)+'</span></section>');
+        break;
+      }
+      case 'h3':
+        parts.push('<p '+st(S.h3)+'>'+inline(b.text, ctx)+'</p>');
+        break;
+      case 'p':
+        parts.push('<p '+st(S.p, T_P)+'>'+inline(b.text, ctx)+'</p>');
+        break;
+      case 'quote':
+        parts.push('<section '+st(S.quote)+'>'+
+          b.text.split('\n').map(l=>'<p '+st(S.quoteP, T_BLK)+'>'+inline(l, ctx)+'</p>').join('')+
+          '</section>');
+        break;
+      case 'ul':
+        parts.push('<section '+st(S.ul)+'>'+
+          b.items.map(it=>'<p '+st(S.li, T_P)+'><span '+st(S.liMark)+'>'+esc(T.mark)+'</span>'+inline(it, ctx)+'</p>').join('')+
+          '</section>');
+        break;
+      case 'ol':
+        parts.push('<section '+st(S.ol)+'>'+
+          b.items.map((it,i)=>'<p '+st(S.li, T_P)+'><span '+st(S.liNum)+'>'+(i+1)+'</span>'+inline(it, ctx)+'</p>').join('')+
+          '</section>');
+        break;
+      case 'hr':
+        parts.push('<section '+st(S.hr)+'><p '+st(S.hrTxt)+'>'+esc(dividerTxt)+'</p></section>');
+        break;
+      case 'code':
+        parts.push('<section '+st(S.code)+'>'+
+          (b.tag ? '<p '+st(S.codeTag)+'>'+esc(b.tag)+'</p>' : '') +
+          b.lines.map(l=>'<p '+st(S.codeP)+'>'+(esc(l)||' ')+'</p>').join('')+
+          '</section>');
+        break;
+      case 'img':
+        parts.push('<section '+st(S.figure)+'>'+
+          '<img src="'+esc(b.src)+'" alt="'+esc(b.alt)+'" '+st(S.img)+'>'+
+          (b.alt ? '<p '+st(S.figcaption)+'>'+esc(b.alt)+'</p>' : '')+
+          '</section>');
+        break;
+      case 'table': {
+        const head = '<tr>'+b.head.map(c=>'<td '+st(S.th)+'>'+inline(c, ctx)+'</td>').join('')+'</tr>';
+        const body = b.rows.map(r=>'<tr>'+b.head.map((_,i)=>'<td '+st(S.td)+'>'+inline(r[i]||'', ctx)+'</td>').join('')+'</tr>').join('');
+        parts.push('<section '+st(S.tableWrap)+'><table '+st(S.table)+'><tbody>'+head+body+'</tbody></table></section>');
+        break;
+      }
+    }
+  }
+
+  /* 参考资料 */
+  if(ctx.footnotes.length){
+    const t = parsed.meta.footnote_title || '参考资料';
+    parts.push('<section '+st(S.fn)+'><p '+st(S.fnTitle)+'>'+esc(t)+'</p>'+
+      ctx.footnotes.map((f,i)=>'<p '+st(S.fnItem)+'>['+(i+1)+'] '+esc(f.t)+'　'+esc(f.u)+'</p>').join('')+
+      '</section>');
+  }
+
+  article.innerHTML = parts.join('\n');
+  article.setAttribute('style', css(S.root));
+  applyGlobal();
+  updateStats();
+  updatePhoneTitle(parsed.meta);
+  scheduleBudget();
+}
+
+/* ==========================================================
+   4. 全局样式覆盖（不重排，手动改的内容不会丢）
+   ========================================================== */
+function applyGlobal(){
+  const base = state.theme.cfg.base || 16;
+  const g = state.g;
+  const scale = g.size ? g.size/base : 1;
+
+  article.querySelectorAll('[data-fs]').forEach(el=>{
+    const f = parseFloat(el.dataset.fs);
+    if(!isNaN(f)) el.style.fontSize = (f*scale).toFixed(2)+'px';
+  });
+  if(g.lh) article.querySelectorAll('[data-lh]').forEach(el=>{ el.style.lineHeight = g.lh; });
+  if(g.ls!=null) article.querySelectorAll('[data-ls]').forEach(el=>{ el.style.letterSpacing = g.ls+'px'; });
+  if(g.gap!=null) article.querySelectorAll('[data-gap]').forEach(el=>{ el.style.marginBottom = g.gap+'px'; });
+  if(g.family) article.querySelectorAll('[data-fam]').forEach(el=>{ el.style.fontFamily = g.family; });
+  if(g.useColor && g.color) article.querySelectorAll('[data-color]').forEach(el=>{ el.style.color = g.color; });
+  article.querySelectorAll('[data-indent]').forEach(el=>{
+    el.style.textIndent = g.indent ? '2em' : '0';
+  });
+}
+
+/* ==========================================================
+   5. 导出 / 复制：把手动编辑产生的标签归一成微信安全结构
+   ========================================================== */
+function normalizeForWechat(root){
+  const S = state.theme.styles;
+
+  /* 选择器 / 字体颜色产生的 font 标签 */
+  root.querySelectorAll('font[size], font[color], font[face]').forEach(f=>{
+    const span = document.createElement('span');
+    const sz = f.getAttribute('size');
+    if(sz && /^\d+$/.test(sz)) span.style.fontSize = parseInt(sz,10)+'px';
+    if(f.getAttribute('color')) span.style.color = f.getAttribute('color');
+    span.innerHTML = f.innerHTML;
+    f.replaceWith(span);
+  });
+
+  /* 引用块 */
+  root.querySelectorAll('blockquote').forEach(q=>{
+    const sec = document.createElement('section');
+    sec.setAttribute('style', css(S.quote));
+    [...q.childNodes].forEach(n=>{
+      const p = document.createElement('p');
+      p.setAttribute('style', css(S.quoteP));
+      p.innerHTML = n.nodeType===1 ? n.innerHTML : esc(n.textContent);
+      sec.appendChild(p);
+    });
+    q.replaceWith(sec);
+  });
+
+  /* 列表 */
+  root.querySelectorAll('ul, ol').forEach(list=>{
+    const ordered = list.tagName === 'OL';
+    const sec = document.createElement('section');
+    sec.setAttribute('style', css(ordered ? S.ol : S.ul));
+    [...list.children].forEach((li, idx)=>{
+      if(li.tagName !== 'LI') return;
+      const p = document.createElement('p');
+      p.setAttribute('style', css(S.li));
+      const badge = document.createElement('span');
+      badge.setAttribute('style', css(ordered ? S.liNum : S.liMark));
+      badge.textContent = ordered ? String(idx+1) : state.theme.mark;
+      p.appendChild(badge);
+      p.insertAdjacentHTML('beforeend', li.innerHTML);
+      sec.appendChild(p);
+    });
+    list.replaceWith(sec);
+  });
+
+  /* 手动插入的标题 */
+  root.querySelectorAll('h1, h2').forEach(h=>{
+    const sec = document.createElement('section');
+    sec.setAttribute('style', css(S.h2));
+    const span = document.createElement('span');
+    span.setAttribute('style', css(S.h2txt));
+    span.innerHTML = h.innerHTML;
+    sec.appendChild(span);
+    h.replaceWith(sec);
+  });
+  root.querySelectorAll('h3, h4, h5, h6').forEach(h=>{
+    const p = document.createElement('p');
+    p.setAttribute('style', css(S.h3));
+    p.innerHTML = h.innerHTML;
+    h.replaceWith(p);
+  });
+
+  /* hr */
+  root.querySelectorAll('hr').forEach(hr=>{
+    const sec = document.createElement('section');
+    sec.setAttribute('style', css(S.hr));
+    const p = document.createElement('p');
+    p.setAttribute('style', css(S.hrTxt));
+    p.textContent = state.theme.divider;
+    sec.appendChild(p);
+    hr.replaceWith(sec);
+  });
+
+  /* 图片兜底样式 */
+  root.querySelectorAll('img').forEach(img=>{
+    img.setAttribute('style', css(S.img));
+  });
+
+  /* 清理属性：微信只认 style，其余全部去掉（根节点自身也要清） */
+  cleanAttrs(root);
+  root.querySelectorAll('*').forEach(cleanAttrs);
+  return root;
+}
+
+const KEEP_ATTR = ['style', 'src', 'alt', 'href', 'colspan', 'rowspan'];
+const BAD_DECL  = /(^|;)\s*(position|float|flex|grid|transform|transition|animation|z-index|filter|cursor|content)\s*:/i;
+
+function cleanAttrs(el){
+  [...el.attributes].forEach(a=>{
+    if(!KEEP_ATTR.includes(a.name)) el.removeAttribute(a.name);
+  });
+  if(el.hasAttribute('style')){
+    const kept = el.getAttribute('style').split(';')
+      .filter(d => d.trim() && !BAD_DECL.test(';' + d)).join(';');
+    el.setAttribute('style', kept);
+  }
+}
+
+function buildExportHtml(slim){
+  const useSlim = (slim === undefined) ? state.slim : slim;
+  const clone = article.cloneNode(true);
+  clone.removeAttribute('contenteditable');
+  clone.removeAttribute('spellcheck');
+  normalizeForWechat(clone);
+  if(useSlim) slimStyles(clone);
+  return clone.outerHTML;
+}
+
+/* ----------------------------------------------------------
+   样式瘦身：删掉「与祖先同值、且可被继承」的声明，靠继承生效。
+   只删与祖先完全相同的值，所以渲染结果不变，纯粹省字符。
+   微信 draft/add 接口 content 上限 20000 字符（标签和属性全算）。
+   ---------------------------------------------------------- */
+const INHERITABLE = new Set([
+  'color','font','font-family','font-size','font-style','font-weight','font-variant',
+  'line-height','letter-spacing','word-spacing','text-align','text-indent',
+  'white-space','word-break','word-wrap','overflow-wrap'
+]);
+
+function slimStyles(root){
+  const walk = (el, ctx)=>{
+    const attr = el.getAttribute('style');
+    if(!attr){
+      [...el.children].forEach(c=>walk(c, ctx));
+      return;
+    }
+    const local = new Map(ctx);
+    const kept = [];
+    attr.split(';').forEach(d=>{
+      d = d.trim();
+      if(!d) return;
+      const i = d.indexOf(':');
+      if(i < 0){ kept.push(d); return; }
+      const k = d.slice(0,i).trim().toLowerCase();
+      const v = d.slice(i+1).trim();
+      if(INHERITABLE.has(k) && local.get(k) === v) return;  /* 与祖先相同 → 交给继承 */
+      kept.push(k+':'+v);
+      local.set(k, v);
+    });
+    el.setAttribute('style', kept.join(';'));
+    [...el.children].forEach(c=>walk(c, local));
+  };
+  walk(root, new Map());
+}
+
+/* 微信接口 20000 字符预算提示（只对 draft/add 接口，复制粘贴无此限制） */
+let budgetTimer = null;
+function scheduleBudget(){
+  clearTimeout(budgetTimer);
+  budgetTimer = setTimeout(updateBudget, 500);
+}
+function updateBudget(){
+  const el = $('#charBudget');
+  if(!el) return;
+  let n = 0, full = 0;
+  try{
+    n = buildExportHtml(true).length;
+    full = buildExportHtml(false).length;
+  }catch(e){ return; }
+  const LIMIT = 20000;
+  const saved = full > 0 ? Math.round((1 - n/full) * 100) : 0;
+  el.textContent = n.toLocaleString('en-US') + ' / 20,000 字符';
+  el.classList.toggle('warn', n > LIMIT*0.8 && n <= LIMIT);
+  el.classList.toggle('over', n > LIMIT);
+  el.title =
+    (n > LIMIT
+      ? '超出接口上限：复制粘贴到后台仍然可用，但推草稿箱接口会被拒。可以考虑精简装饰或拆分文章。\n'
+      : '微信 draft/add 接口的 content 上限为 20000 字符，标签与属性全部计入。复制粘贴没有这个限制。\n') +
+    (state.slim ? `已开启样式瘦身，比未瘦身节省 ${saved}% 字符（${full.toLocaleString('en-US')} → ${n.toLocaleString('en-US')}）。\n` : '当前未瘦身。\n') +
+    '若粘贴后发现个别文字字号或字体不对，把「样式瘦身」关掉再复制一次即可。';
+}
+
+/* ==========================================================
+   6. 剪贴板 / 导出
+   ========================================================== */
+function toast(msg, isErr){
+  const el = $('#toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (isErr ? ' err' : '');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>{ el.className = 'toast'; }, 2600);
+}
+
+async function copyRich(){
+  const html = buildExportHtml();
+  const text = article.innerText;
+  try{
+    if(navigator.clipboard && window.ClipboardItem){
+      await navigator.clipboard.write([ new ClipboardItem({
+        'text/html' : new Blob([html], {type:'text/html'}),
+        'text/plain': new Blob([text], {type:'text/plain'})
+      }) ]);
+      toast('已复制富文本，去公众号后台正文区 Ctrl+V 即可');
+      return;
+    }
+    throw new Error('no clipboard api');
+  }catch(e){
+    /* 兜底：选中正文再复制 */
+    try{
+      const range = document.createRange();
+      range.selectNodeContents(article);
+      const sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+      const ok = document.execCommand('copy');
+      sel.removeAllRanges();
+      toast(ok ? '已复制（兼容模式），去后台 Ctrl+V' : '复制失败，请手动全选正文后 Ctrl+C', !ok);
+    }catch(err){
+      toast('复制失败，请手动全选正文后 Ctrl+C', true);
+    }
+  }
+}
+
+function downloadHtml(){
+  const title = (state.source.match(/^title\s*:\s*(.+)$/m) || [,'公众号文章'])[1].trim();
+  const page =
+'<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n' +
+'<meta name="viewport" content="width=device-width,initial-scale=1">\n<title>' + esc(title) + '</title>\n' +
+'<style>body{margin:0;background:#f2f3f5;padding:24px 12px;}\n' +
+'.wrap{max-width:414px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(0,0,0,.08);}\n' +
+'</style>\n</head>\n<body>\n<div class="wrap">\n' + buildExportHtml() + '\n</div>\n</body>\n</html>';
+  const blob = new Blob([page], {type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = title.replace(/[\\/:*?"<>|]/g,'_') + '.html';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 4000);
+  toast('已导出 HTML 文件');
+}
+
+/* ==========================================================
+   7. 富文本编辑（选区保持 + 微信安全化）
+   ========================================================== */
+const article = $('#article');
+let savedRange = null;
+
+document.addEventListener('selectionchange', ()=>{
+  const sel = window.getSelection();
+  if(sel.rangeCount && article.contains(sel.anchorNode)){
+    savedRange = sel.getRangeAt(0).cloneRange();
+  }
+});
+function restoreSel(){
+  const sel = window.getSelection();
+  const inside = sel.rangeCount && article.contains(sel.anchorNode);
+  if(!inside) article.focus();
+  if(savedRange){
+    sel.removeAllRanges();
+    sel.addRange(savedRange);
+  }
+}
+function exec(cmd, val){
+  restoreSel();
+  try{
+    document.execCommand('styleWithCSS', false, true);
+    document.execCommand(cmd, false, val===undefined?null:val);
+  }catch(e){ /* ignore */ }
+}
+
+/* 选中文字改字号：先打 font[size=7] 再换 span */
+function setSelectionFontSize(px){
+  restoreSel();
+  document.execCommand('styleWithCSS', false, true);
+  document.execCommand('fontSize', false, '7');
+  article.querySelectorAll('font[size="7"]').forEach(f=>{
+    const span = document.createElement('span');
+    span.style.fontSize = px+'px';
+    span.innerHTML = f.innerHTML;
+    f.replaceWith(span);
+  });
+}
+
+function insertImageFile(file){
+  if(!file || !/^image\//.test(file.type)) return;
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    restoreSel();
+    document.execCommand('insertHTML', false,
+      '<img src="'+fr.result+'" '+st(state.theme.styles.img)+'>');
+    toast('图片已插入（粘贴到公众号时会被自动转存）');
+  };
+  fr.readAsDataURL(file);
+}
+
+/* 粘贴净化 */
+function sanitizeHtml(html){
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('script,style,meta,link,iframe,object,embed,form,input').forEach(n=>n.remove());
+  const KEEP = ['style','href','src','alt','colspan','rowspan'];
+  const BAD  = /(^|;)\s*(position|float|flex|grid|transform|transition|animation|z-index|filter|cursor|content)\s*:/i;
+  doc.body.querySelectorAll('*').forEach(el=>{
+    [...el.attributes].forEach(a=>{ if(!KEEP.includes(a.name)) el.removeAttribute(a.name); });
+    if(el.hasAttribute('style')){
+      const kept = el.getAttribute('style').split(';').filter(d=>d.trim() && !BAD.test(';'+d)).join(';');
+      el.setAttribute('style', kept);
+    }
+  });
+  return doc.body.innerHTML;
+}
+
+article.addEventListener('paste', e=>{
+  const dt = e.clipboardData;
+  if(!dt) return;
+  const html = dt.getData('text/html');
+  if(html){
+    e.preventDefault();
+    document.execCommand('insertHTML', false, sanitizeHtml(html));
+  }else{
+    const text = dt.getData('text/plain');
+    if(text){
+      e.preventDefault();
+      document.execCommand('insertText', false, text);
+    }
+  }
+});
+article.addEventListener('drop', e=>{
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  if(f && /^image\//.test(f.type)){ e.preventDefault(); insertImageFile(f); }
+});
+article.addEventListener('input', scheduleBudget);
+
+/* 工具条绑定 */
+$$('#rtToolbar .tb[data-act]').forEach(btn=>{
+  btn.addEventListener('mousedown', e=>e.preventDefault());
+  btn.addEventListener('click', ()=>{
+    const act = btn.dataset.act;
+    if(act==='undo' || act==='redo'){ exec(act); return; }
+    if(act==='quote'){ exec('formatBlock', 'blockquote'); return; }
+    if(act==='hr'){
+      restoreSel();
+      exec('insertHTML', '<hr>');
+      return;
+    }
+    if(act==='image'){ imagePicker.click(); return; }
+    if(act==='clear'){ exec('removeFormat'); return; }
+    exec(act);
+  });
+});
+
+$('#fmtSelect').addEventListener('change', e=>{
+  exec('formatBlock', e.target.value);
+  e.target.selectedIndex = 0;
+});
+$('#sizeSelect').addEventListener('change', e=>{
+  if(e.target.value) setSelectionFontSize(e.target.value);
+  e.target.selectedIndex = 0;
+});
+$('#pickFg').addEventListener('input', e=>{
+  $('#barFg').style.background = e.target.value;
+  exec('foreColor', e.target.value);
+});
+$('#pickBg').addEventListener('input', e=>{
+  $('#barBg').style.background = e.target.value;
+  exec('hiliteColor', e.target.value);
+});
+
+const imagePicker = document.createElement('input');
+imagePicker.type = 'file';
+imagePicker.accept = 'image/*';
+imagePicker.hidden = true;
+document.body.appendChild(imagePicker);
+imagePicker.addEventListener('change', ()=>{
+  if(imagePicker.files[0]) insertImageFile(imagePicker.files[0]);
+  imagePicker.value = '';
+});
+
+/* 同步按钮状态（粗体/斜体等的按下态） */
+function syncToolbarState(){
+  ['bold','italic','underline','strikeThrough'].forEach(cmd=>{
+    const b = $('#rtToolbar .tb[data-act="'+cmd+'"]');
+    if(!b) return;
+    let on = false;
+    try{ on = document.queryCommandState(cmd); }catch(e){}
+    b.classList.toggle('sel', on);
+  });
+}
+document.addEventListener('selectionchange', ()=>{
+  const sel = window.getSelection();
+  if(sel.rangeCount && article.contains(sel.anchorNode)) syncToolbarState();
+});
+
+/* ==========================================================
+   8. 主题条 / 样式面板
+   ========================================================== */
+function buildThemeStrip(){
+  const strip = $('#themeStrip');
+  strip.innerHTML = THEME_LIST.map(t=>
+    '<button class="tchip" data-id="'+t.id+'" title="'+esc(t.desc)+'">'+
+      '<div class="nm">'+esc(t.name)+'</div>'+
+      '<div class="ds">'+esc(t.desc)+'</div>'+
+      '<div class="sw">'+t.swatch.map(c=>'<i style="background:'+c+'"></i>').join('')+'</div>'+
+    '</button>').join('');
+  strip.querySelectorAll('.tchip').forEach(chip=>{
+    chip.addEventListener('click', ()=>{
+      const prev = state.theme.id;
+      selectTheme(chip.dataset.id);
+      if(prev !== chip.dataset.id){
+        syncGlobalFromTheme(true);
+        renderArticle();
+        toast('已套用「'+state.theme.name+'」主题');
+      }
+    });
+  });
+}
+function selectTheme(id){
+  state.theme = buildTheme(getTheme(id).cfg);
+  state.theme.id = id;
+  state.theme.name = getTheme(id).name;
+  $$('#themeStrip .tchip').forEach(c=>c.classList.toggle('on', c.dataset.id===id));
+  if(state.g.size==null) syncGlobalFromTheme(false);
+  save();
+}
+
+/* 样式面板控件 */
+function syncGlobalFromTheme(reset){
+  const c = state.theme.cfg;
+  if(reset){
+    state.g = { size:null, lh:null, ls:null, gap:null, family:'', color:'', useColor:false, indent:false };
+  }
+  const base = c.base||16;
+  $('#gSize').value = state.g.size!=null ? state.g.size : base;
+  $('#gLh').value   = state.g.lh!=null   ? state.g.lh   : (c.lh||1.85);
+  $('#gLs').value   = state.g.ls!=null   ? state.g.ls   : (c.ls!=null?c.ls:0.5);
+  $('#gGap').value  = state.g.gap!=null  ? state.g.gap  : (c.gap!=null?c.gap:18);
+  $('#gFamily').value = state.g.family || '';
+  refreshLabels();
+}
+function refreshLabels(){
+  $('#vSize').textContent = (+$('#gSize').value).toFixed(1).replace('.0','');
+  $('#vLh').textContent   = (+$('#gLh').value).toFixed(2);
+  $('#vLs').textContent   = (+$('#gLs').value).toFixed(1);
+  $('#vGap').textContent  = $('#gGap').value;
+}
+
+$('#gSize').addEventListener('input', e=>{ state.g.size = +e.target.value; refreshLabels(); applyGlobal(); save(); });
+$('#gLh').addEventListener('input',   e=>{ state.g.lh   = +e.target.value; refreshLabels(); applyGlobal(); save(); });
+$('#gLs').addEventListener('input',   e=>{ state.g.ls   = +e.target.value; refreshLabels(); applyGlobal(); save(); });
+$('#gGap').addEventListener('input',  e=>{ state.g.gap  = +e.target.value; refreshLabels(); applyGlobal(); save(); });
+$('#gFamily').addEventListener('change', e=>{ state.g.family = e.target.value; applyGlobal(); save(); });
+$('#gColor').addEventListener('input', e=>{ state.g.color = e.target.value; state.g.useColor = true; $('#useColor').checked = true; applyGlobal(); save(); });
+$('#useColor').addEventListener('change', e=>{ state.g.useColor = e.target.checked; applyGlobal(); save(); });
+$('#gIndent').addEventListener('change', e=>{ state.g.indent = e.target.checked; applyGlobal(); save(); });
+$('#gFootnote').addEventListener('change', e=>{ state.footnote = e.target.checked; renderArticle(); save(); });
+$('#gTitleBlock').addEventListener('change', e=>{ state.titleBlock = e.target.checked; renderArticle(); save(); });
+$('#gSlim').addEventListener('change', e=>{ state.slim = e.target.checked; scheduleBudget(); save(); });
+
+$('#btnResetStyle').addEventListener('click', ()=>{
+  syncGlobalFromTheme(true);
+  renderArticle();
+  toast('已恢复该主题的默认排版参数');
+});
+$('#btnRetouch').addEventListener('click', ()=>{ renderArticle(); toast('已重新排版'); });
+
+$('#btnStylePanel').addEventListener('click', ()=>{
+  const p = $('#stylePanel');
+  p.hidden = !p.hidden;
+  $('#btnStylePanel').textContent = '样式设置 ' + (p.hidden ? '▾' : '▴');
+  save();
+});
+
+/* ==========================================================
+   9. 顶部操作
+   ========================================================== */
+$('#appThemeSeg').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  setAppTheme(b.dataset.t);
+});
+function setAppTheme(t){
+  state.appTheme = t;
+  document.documentElement.setAttribute('data-app', t);
+  $$('#appThemeSeg button').forEach(b=>b.classList.toggle('on', b.dataset.t===t));
+  save();
+}
+
+$('#btnWidth').addEventListener('click', ()=>{
+  state.wide = !state.wide;
+  $('#phone').classList.toggle('wide', state.wide);
+  $('#btnWidth').textContent = state.wide ? '手机预览' : '宽屏预览';
+  save();
+});
+
+$('#btnCopy').addEventListener('click', copyRich);
+$('#btnExport').addEventListener('click', downloadHtml);
+
+$('#btnUpload').addEventListener('click', ()=>filePicker.click());
+$('#filePicker').addEventListener('change', e=>{
+  if(e.target.files[0]) readFile(e.target.files[0]);
+  e.target.value = '';
+});
+$('#btnDemo').addEventListener('click', ()=>{
+  $('#source').value = DEMO;
+  state.source = DEMO;
+  renderArticle(); save();
+  toast('已载入示例文稿');
+});
+$('#btnClear').addEventListener('click', ()=>{
+  $('#source').value = '';
+  state.source = '';
+  article.innerHTML = '';
+  updateStats(); save();
+});
+
+/* 文件读取 */
+function readFile(file){
+  const name = file.name.toLowerCase();
+  if(name.endsWith('.docx')){
+    readDocx(file);
+    return;
+  }
+  const fr = new FileReader();
+  fr.onload = ()=>{
+    let text = fr.result || '';
+    if(name.endsWith('.html') || name.endsWith('.htm')){
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      doc.querySelectorAll('script,style').forEach(n=>n.remove());
+      const blocks = [];
+      doc.body.querySelectorAll('h1,h2,h3,h4,p,li,blockquote').forEach(el=>{
+        const t = el.textContent.replace(/\s+/g,' ').trim();
+        if(!t) return;
+        if(/^H1$/.test(el.tagName))      blocks.push('# '+t);
+        else if(/^H2$/.test(el.tagName)) blocks.push('## '+t);
+        else if(/^H[34]$/.test(el.tagName)) blocks.push('### '+t);
+        else if(el.tagName==='LI')       blocks.push('- '+t);
+        else if(el.tagName==='BLOCKQUOTE') blocks.push('> '+t);
+        else                             blocks.push(t);
+        blocks.push('');
+      });
+      text = blocks.join('\n');
+    }
+    $('#source').value = text;
+    state.source = text;
+    renderArticle(); save();
+    toast('已导入：' + file.name);
+  };
+  fr.readAsText(file, 'utf-8');
+}
+
+/* .docx 用 mammoth 懒加载 */
+function loadScript(src){
+  return new Promise((res, rej)=>{
+    const s = document.createElement('script');
+    s.src = src; s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+async function readDocx(file){
+  toast('正在解析 Word 文档…');
+  try{
+    if(!window.mammoth){
+      await loadScript('https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js');
+    }
+    const buf = await file.arrayBuffer();
+    const r = await window.mammoth.convertToMarkdown({arrayBuffer:buf});
+    $('#source').value = r.value;
+    state.source = r.value;
+    renderArticle(); save();
+    toast('已导入 Word：' + file.name);
+  }catch(e){
+    toast('Word 解析失败（需联网加载转换库），请另存为 .md 或 .txt 再上传', true);
+  }
+}
+
+/* 全局拖放 */
+const dropmask = $('#dropmask');
+let dragDepth = 0;
+window.addEventListener('dragenter', e=>{
+  if(e.dataTransfer && [...(e.dataTransfer.types||[])].includes('Files')){
+    dragDepth++; dropmask.classList.add('show');
+  }
+});
+window.addEventListener('dragleave', ()=>{
+  dragDepth = Math.max(0, dragDepth-1);
+  if(!dragDepth) dropmask.classList.remove('show');
+});
+window.addEventListener('dragover', e=>e.preventDefault());
+window.addEventListener('drop', e=>{
+  const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+  dragDepth = 0; dropmask.classList.remove('show');
+  if(f && !article.contains(e.target)){ e.preventDefault(); readFile(f); }
+});
+
+/* 输入 */
+let inputTimer = null;
+$('#source').addEventListener('input', e=>{
+  state.source = e.target.value;
+  updateStats();
+  clearTimeout(inputTimer);
+  inputTimer = setTimeout(()=>{ renderArticle(); save(); }, 420);
+});
+
+function updateStats(){
+  const t = state.source || '';
+  const chars = t.replace(/\s/g,'').length;
+  const paras = t.split(/\n\s*\n/).filter(s=>s.trim()).length;
+  $('#statChar').textContent = chars;
+  $('#statPara').textContent = paras;
+  $('#statRead').textContent = '约 ' + Math.max(1, Math.round(chars/400)) + ' 分钟';
+}
+function updatePhoneTitle(meta){
+  const t = (meta && meta.title) || (state.source.match(/^#\s+(.+)$/m)||[,'公众号正文预览'])[1];
+  $('#phoneTitle').textContent = t.slice(0, 22);
+}
+
+/* ==========================================================
+   10. 本地记忆
+   ========================================================== */
+function save(){
+  try{
+    localStorage.setItem('wxt-studio', JSON.stringify({
+      source: state.source,
+      theme: state.theme.id,
+      appTheme: state.appTheme,
+      wide: state.wide,
+      titleBlock: state.titleBlock,
+      footnote: state.footnote,
+      slim: state.slim,
+      g: state.g,
+      panel: !$('#stylePanel').hidden
+    }));
+  }catch(e){}
+}
+function load(){
+  let d = null;
+  try{ d = JSON.parse(localStorage.getItem('wxt-studio')||'null'); }catch(e){}
+  return d;
+}
+
+/* ==========================================================
+   11. 示例文稿
+   ========================================================== */
+const DEMO = `---
+title: 挑西瓜，看准这一个地方就够了
+author: 青简
+date: 2026年9月18日
+lead: 敲了半天听不出门道？其实不用听。西瓜甜不甜，看一眼瓜脐就知道。
+h2_num: formal
+---
+
+夏天买瓜最怕"开盲盒"：抱回家切开，白瓤、淡味、还带生。摊主拍着胸脯说"保甜"，你也只能信。
+
+其实挑瓜这事有硬标准，不用靠听声辨位，也不用赌运气。**记住下面四处，基本不会错**。
+
+## 一看瓜脐：圈越小越甜
+
+西瓜底部那个小圆圈叫瓜脐，是花谢之后留下的痕迹。
+
+- **圈越小、越收紧** —— 说明发育充分，糖分攒得足
+- **圈大而松、周围发白** —— 多半是生长期不足，味道偏淡
+- **瓜脐微凹** —— 通常比平的要甜
+
+这是最容易上手的一条，也是老瓜农最先看的地方。
+
+## 二看瓜纹：纹路要"撑开"
+
+成熟西瓜的表皮会被内部膨大的果肉撑出清晰的纹路：
+
+> 好的西瓜，深色纹路和浅色底之间界线分明，纹路带有明显的"张开感"。
+> 如果纹路细碎、模糊、颜色发闷，多半还没熟透。
+
+同一批瓜里，纹路越舒展、底色越清亮的那一个，往往越值得买。
+
+## 三掂重量：宁轻勿重
+
+同样大小的两个瓜，**轻的那个通常更甜**。
+
+水在瓜里以两种形式存在：结合水和自由水。糖分高的瓜，自由水偏少，拿在手里会觉得"轻而实"。太沉的，可能只是水多。
+
+## 四看瓜藤：干枯弯曲才熟
+
+瓜蒂上的那截藤蔓也叫瓜藤：
+
+1. 藤蔓**青绿粗壮** —— 摘早了
+2. 藤蔓**干枯、打卷** —— 正好熟
+3. 完全脱落、留一个凹坑 —— 熟过头，口感发绵
+
+---
+
+## 常见误区
+
+- **纹路越乱越好** —— 错，要看纹路是否清晰舒展，不是看乱
+- **拍起来咚咚响就是好瓜** —— 声音只能判断成熟度，判断不了甜度
+- **瓜越大越甜** —— 品种不同个头差异很大，同品种里中等偏大最稳
+
+## 写在最后
+
+挑瓜这件事，说到底就是**找证据**：脐、纹、重、藤，四个证据都指向同一个结论时，这只瓜基本不会差。
+
+下次去菜市场，别再拍来拍去了。翻过来看一眼瓜脐，比什么都快。
+
+> 挑瓜如此，挑很多东西都是如此。
+`;
+
+/* ==========================================================
+   12. 启动
+   ========================================================== */
+function init(){
+  const d = load();
+  const initialTheme = (d && d.theme) || 'gu-feng';
+
+  if(d){
+    state.appTheme   = d.appTheme || 'light';
+    state.wide       = !!d.wide;
+    state.titleBlock = d.titleBlock !== false;
+    state.footnote   = d.footnote !== false;
+    state.slim       = d.slim !== false;
+    if(d.g) state.g  = Object.assign(state.g, d.g);
+    $('#gFootnote').checked  = state.footnote;
+    $('#gTitleBlock').checked = state.titleBlock;
+    $('#gSlim').checked      = state.slim;
+    $('#gIndent').checked    = !!state.g.indent;
+    $('#useColor').checked   = !!state.g.useColor;
+    if(state.g.color) $('#gColor').value = state.g.color;
+  }
+
+  setAppTheme(state.appTheme);
+  $('#phone').classList.toggle('wide', state.wide);
+  $('#btnWidth').textContent = state.wide ? '手机预览' : '宽屏预览';
+
+  buildThemeStrip();
+  state.theme = buildTheme(getTheme(initialTheme).cfg);
+  state.theme.id = initialTheme;
+  state.theme.name = getTheme(initialTheme).name;
+  $$('#themeStrip .tchip').forEach(c=>c.classList.toggle('on', c.dataset.id===initialTheme));
+
+  const src = (d && d.source) ? d.source : DEMO;
+  $('#source').value = src;
+  state.source = src;
+
+  if(d && d.panel){ $('#stylePanel').hidden = false; $('#btnStylePanel').textContent = '样式设置 ▴'; }
+
+  syncGlobalFromTheme(false);
+  try{ document.execCommand('styleWithCSS', false, true); }catch(e){}
+  renderArticle();
+
+  /* 左右分栏拖拽 */
+  const splitter = $('#splitter');
+  let dragging = false;
+  splitter.addEventListener('pointerdown', e=>{
+    dragging = true;
+    splitter.setPointerCapture(e.pointerId);
+    document.body.style.cursor = 'col-resize';
+  });
+  splitter.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const rect = document.querySelector('.workspace').getBoundingClientRect();
+    let w = e.clientX - rect.left - 12;
+    w = Math.max(280, Math.min(w, rect.width-460));
+    document.querySelector('.pane-src').style.setProperty('--left-w', w+'px');
+    document.querySelector('.pane-src').style.width = w+'px';
+  });
+  const stop = ()=>{ dragging = false; document.body.style.cursor=''; };
+  splitter.addEventListener('pointerup', stop);
+  splitter.addEventListener('pointercancel', stop);
+
+  /* 快捷键 */
+  document.addEventListener('keydown', e=>{
+    const mod = e.ctrlKey || e.metaKey;
+    if(!mod) return;
+    if(e.key==='s' || e.key==='S'){ e.preventDefault(); renderArticle(); toast('已重新排版'); }
+    if(e.key==='e' && e.shiftKey){ e.preventDefault(); downloadHtml(); }
+  });
+}
+
+init();
+</script>
+</body>
+</html>

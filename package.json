@@ -1,0 +1,21 @@
+{
+  "name": "wechat-typeset-studio",
+  "version": "1.0.0",
+  "private": true,
+  "description": "微信公众号排版工作台 —— 单文件、零构建的网页排版工具，导出微信编辑器能原样保留的内联样式正文",
+  "keywords": [
+    "微信公众号",
+    "排版",
+    "markdown",
+    "inline-style",
+    "wechat"
+  ],
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "node test/e2e.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
