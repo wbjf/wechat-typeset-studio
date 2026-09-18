@@ -792,6 +792,68 @@ ok('导出成品保留了图片圆角与阴影',
    /border-radius:8px/.test(expStyle.last) && /box-shadow/.test(expStyle.last),
    expStyle.n + ' 张图, 末张=' + expStyle.last);
 
+/* ---------- 12. 插入点：跟随左侧文稿的光标 ---------- */
+/* 以前 sourceInsert 用 document.activeElement === textarea 现场判断有没有光标，
+   但点开浮层必然让 textarea 失焦（activeElement 变成浮层里的按钮 / body），
+   于是条件永远为假 —— 插什么都是追加到文末。现在改成「记住最后一次落下的光标」。 */
+const caretRes = await page.evaluate(async () => {
+  const ta = document.querySelector('#source');
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const insElem = async (id) => {
+    document.querySelector('#btnInsert').click();
+    await sleep(200);
+    [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'))
+      .querySelector('[data-ins="elem"]').click();
+    await sleep(250);
+    [...document.querySelectorAll('.pop')].find(x => {
+      const h = x.querySelector('.pop-h'); return h && /装饰元件/.test(h.textContent);
+    }).querySelector('[data-el="' + id + '"]').click();
+    await sleep(300);
+  };
+  document.querySelector('#btnDemo').click();     /* 回到已知文稿，同时清掉光标记忆 */
+  await sleep(400);
+  const mid = Math.floor(ta.value.length / 2);
+  ta.focus();
+  ta.setSelectionRange(mid, mid);
+  await sleep(120);
+  await insElem('quote');
+  const i1 = ta.value.indexOf('::quote');
+  await insElem('tip');                            /* 连着插第二个 */
+  const i2 = ta.value.indexOf('::tip');
+  return { mid, i1, i2, d1: Math.abs(i1 - mid), d2: i2 - i1 };
+});
+ok('光标在文档中间时，插入落在光标处（不再一律追加到文末）',
+   caretRes.i1 >= 0 && caretRes.d1 <= 4, JSON.stringify(caretRes));
+ok('连着插第二个时接着第一个往后排，不都堆在文末',
+   caretRes.i2 > caretRes.i1 && caretRes.d2 < 60, 'i1=' + caretRes.i1 + ' i2=' + caretRes.i2);
+
+/* 反向：没碰过左侧（直接粘贴文稿就开始排版）→ 仍然追加到文末 */
+const endRes = await page.evaluate(async () => {
+  const ta = document.querySelector('#source');
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  document.querySelector('#btnDemo').click();
+  await sleep(400);
+  const len = ta.value.length;
+  document.querySelector('#btnInsert').click();
+  await sleep(200);
+  [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'))
+    .querySelector('[data-ins="elem"]').click();
+  await sleep(250);
+  [...document.querySelectorAll('.pop')].find(x => {
+    const h = x.querySelector('.pop-h'); return h && /装饰元件/.test(h.textContent);
+  }).querySelector('[data-el="tip"]').click();
+  await sleep(300);
+  return { len, idx: ta.value.indexOf('::tip') };
+});
+ok('没碰过左侧时，插入仍追加到文末', endRes.idx > endRes.len * 0.9, JSON.stringify(endRes));
+
+/* 「插入」菜单里要写明插入点规则，否则用户不知道能指定位置 */
+const caretHint = await page.evaluate(() => {
+  const p = [...document.querySelectorAll('.pop')].find(x => x.querySelector('[data-ins]'));
+  return (p.querySelector('.pop-hint') || {}).textContent || '';
+});
+ok('「插入」菜单提示了插入点由左侧光标决定', /光标/.test(caretHint), caretHint.trim().slice(0, 40));
+
 try { fs.unlinkSync(TMPIMG); } catch (e) {}
 
 const finalErrors = errors.length;

@@ -1600,10 +1600,10 @@ async function insertImageFile(file, opts){
     radius: o.radius, align: o.align, shadow: !!o.shadow,
     name: file.name || '', kb: Math.round(out.src.length / 1024)
   };
-  sourceInsert('![' + o.caption + '](asset:' + key + ')');
+  const at = sourceInsert('![' + o.caption + '](asset:' + key + ')');
 
   const ratio = out.origW ? Math.round(out.w / out.origW * 100) : 100;
-  toast('图片已插入 ' + out.w + '×' + out.h + '（约 ' + state.assets[key].kb + 'KB，原图 ' +
+  toast('图片已插入到' + whereLabel(at) + ' ' + out.w + '×' + out.h + '（约 ' + state.assets[key].kb + 'KB，原图 ' +
         out.origW + '×' + out.origH + ' 已缩到 ' + ratio + '%）');
 }
 
@@ -1821,11 +1821,31 @@ function bindPopDismiss(pop, anchors){
 
 /* 插入内容一律写回左侧文档 —— 那里是唯一数据源，
    所以插进去的东西能跟着文稿一起存下来，换主题也不会丢。
-   插入点取左侧光标；文档没被点过就追加到末尾。 */
+
+   插入点 = 用户最后一次在左侧落下的光标（在左侧点一下就能定位置）。
+   这里**不能**现场判断 document.activeElement：点开浮层必然让 textarea 失焦，
+   等确认插入时 activeElement 已经变成浮层里的按钮 / body。
+   但失焦并不会清掉 selectionStart，位置其实一直在 —— 所以要「记住」它。
+
+   另外记下当时的文档长度当指纹：文稿被程序整体换掉（导入文件、载入示例、
+   恢复缓存）时不会触发任何光标事件，指纹对不上就自动退回「追加到末尾」，
+   避免把内容插进一段和用户看到的不一样的文字里。 */
+let srcCaret = null;
+let srcCaretLen = -1;
+
+function rememberCaret(){
+  const ta = $('#source');
+  if(!ta || ta.selectionStart == null) return;
+  srcCaret = ta.selectionStart;
+  srcCaretLen = ta.value.length;
+}
+function resetCaret(){ srcCaret = null; srcCaretLen = -1; }
+
 function sourceInsert(text){
   const ta = $('#source');
-  const focused = (document.activeElement === ta);
-  const pos = (focused && ta.selectionStart != null) ? ta.selectionStart : ta.value.length;
+  const usable = srcCaret != null && srcCaretLen === ta.value.length &&
+                 srcCaret >= 0 && srcCaret <= ta.value.length;
+  const pos = usable ? srcCaret : ta.value.length;
   const before = ta.value.slice(0, pos);
   const after  = ta.value.slice(pos);
   const padL = (before && !/\n\n$/.test(before)) ? (/\n$/.test(before) ? '\n' : '\n\n') : '';
@@ -1834,9 +1854,19 @@ function sourceInsert(text){
   ta.value = next;
   state.source = next;
   const caret = (before + padL + text).length;
+  srcCaret = caret;            /* 连着插几个时，接着往后排而不是都堆在文末 */
+  srcCaretLen = next.length;
   try{ ta.setSelectionRange(caret, caret); }catch(e){}
   renderArticle();
   save();
+  /* 回一个位置描述，让调用方能明确告诉用户「插到哪儿了」——
+     插入点不写出来的话，用户只能靠猜。 */
+  return { line: (before + padL).split('\n').length, atEnd: !usable };
+}
+
+/* 「第 12 行」/「文末」 */
+function whereLabel(at){
+  return (at && !at.atEnd) ? ('第 ' + at.line + ' 行') : '文末';
 }
 
 /* 「插入 ▾」菜单 */
@@ -1849,7 +1879,8 @@ insertPop.innerHTML =
     '<button type="button" class="el-item" data-ins="img"><b>图片</b><i>压缩、圆角、图注</i></button>'+
     '<button type="button" class="el-item" data-ins="table"><b>表格</b><i>可视化编辑行列</i></button>'+
     '<button type="button" class="el-item" data-ins="elem"><b>装饰元件</b><i>关注卡、名片、往期回顾</i></button>'+
-  '</div>';
+  '</div>'+
+  '<p class="pop-hint">插到哪儿由<b>左侧文稿的光标</b>决定：先在左边点一下要插的位置，再回来点上面的按钮；没点过就追加到文末。</p>';
 document.body.appendChild(insertPop);
 bindPopDismiss(insertPop, ['#btnInsert']);
 insertPop.addEventListener('click', e=>{
@@ -1888,8 +1919,8 @@ elemPop.addEventListener('click', e=>{
   const el = ELEM_MAP[b.dataset.el];
   elemPop.hidden = true;
   if(!el) return;
-  sourceInsert('::' + el.id);
-  toast('已插入「' + el.name + '」，在左侧改掉占位文字即可');
+  const at = sourceInsert('::' + el.id);
+  toast('已插入「' + el.name + '」到' + whereLabel(at) + '，在左侧改掉占位文字即可');
 });
 function openElemPop(anchor){ placePop(elemPop, anchor); }
 
@@ -2051,8 +2082,8 @@ function tblOp(op){
     const lines = cells.map(row => '| ' + row.map(cell).join(' | ') + ' |');
     const sep = '| ' + cells[0].map(()=>'---').join(' | ') + ' |';
     tblPop.hidden = true;
-    sourceInsert([lines[0], sep, ...lines.slice(1)].join('\n'));
-    toast('表格已插入 ' + cells.length + ' 行 × ' + cells[0].length + ' 列');
+    const at = sourceInsert([lines[0], sep, ...lines.slice(1)].join('\n'));
+    toast('表格已插入到' + whereLabel(at) + ' ' + cells.length + ' 行 × ' + cells[0].length + ' 列');
     return;
   }
 
@@ -2401,6 +2432,7 @@ $('#filePicker').addEventListener('change', e=>{
 $('#btnDemo').addEventListener('click', ()=>{
   $('#source').value = DEMO;
   state.source = DEMO;
+  resetCaret();
   renderArticle(); save();
   toast('已载入示例文稿');
 });
@@ -2408,6 +2440,7 @@ $('#btnClear').addEventListener('click', ()=>{
   $('#source').value = '';
   state.source = '';
   article.innerHTML = '';
+  resetCaret();
   updateStats(); save();
 });
 
@@ -2440,6 +2473,7 @@ function readFile(file){
     }
     $('#source').value = text;
     state.source = text;
+    resetCaret();
     renderArticle(); save();
     toast('已导入：' + file.name);
   };
@@ -2464,6 +2498,7 @@ async function readDocx(file){
     const r = await window.mammoth.convertToMarkdown({arrayBuffer:buf});
     $('#source').value = r.value;
     state.source = r.value;
+    resetCaret();
     renderArticle(); save();
     toast('已导入 Word：' + file.name);
   }catch(e){
@@ -2488,6 +2523,17 @@ window.addEventListener('drop', e=>{
   const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
   dragDepth = 0; dropmask.classList.remove('show');
   if(f && !article.contains(e.target)){ e.preventDefault(); readFile(f); }
+});
+
+/* 记住左侧光标 —— 见 sourceInsert 的说明。
+   blur 也记：点击浮层按钮会让 textarea 失焦，而那一瞬间 selectionStart 仍有效，
+   这正是「先定位、再插入」这条流程要拿到的位置。
+   另外挂 selectionchange 兜住纯键盘移动光标、以及程序设置选区的场景。 */
+['click','mouseup','keyup','select','input','blur'].forEach(ev=>{
+  $('#source').addEventListener(ev, rememberCaret);
+});
+document.addEventListener('selectionchange', ()=>{
+  if(document.activeElement === $('#source')) rememberCaret();
 });
 
 /* 输入 */
@@ -2644,6 +2690,7 @@ function init(){
   const src = (d && d.source) ? d.source : DEMO;
   $('#source').value = src;
   state.source = src;
+  resetCaret();
 
   if(d && d.panel){ $('#stylePanel').hidden = false; $('#btnStylePanel').textContent = '样式设置 ▴'; }
 
